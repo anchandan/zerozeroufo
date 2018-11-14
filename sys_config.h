@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 
-
+#define CONTROLLER
 /** @{ Nordic wireless configuration
  * More settings can be configured at mesh_config.h
  * @warning

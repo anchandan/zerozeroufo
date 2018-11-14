@@ -23,6 +23,7 @@
  * 			@see L0_LowLevel/lpc_sys.h if you wish to override printf/scanf functions.
  *
  */
+#include "sys_config.h"
 #include "tasks.hpp"
 #include "examples/examples.hpp"
 
@@ -58,10 +59,10 @@ int main(void)
     scheduler_add_task(new wirelessTask(PRIORITY_CRITICAL));
 
     /* Change "#if 0" to "#if 1" to run period tasks; @see period_callbacks.cpp */
-    #if 0
-    const bool run_1Khz = false;
-    scheduler_add_task(new periodicSchedulerTask(run_1Khz));
-    #endif
+#if 0
+const bool run_1Khz = false;
+scheduler_add_task(new periodicSchedulerTask(run_1Khz));
+#endif
 
     /* The task for the IR receiver to "learn" IR codes */
     // scheduler_add_task(new remoteTask  (PRIORITY_LOW));
@@ -74,37 +75,37 @@ int main(void)
      * This is a the board demonstration task that can be used to test the board.
      * This also shows you how to send a wireless packets to other boards.
      */
-    #if 0
-        scheduler_add_task(new example_io_demo());
-    #endif
+#if 0
+    scheduler_add_task(new example_io_demo());
+#endif
 
     /**
      * Change "#if 0" to "#if 1" to enable examples.
      * Try these examples one at a time.
      */
-    #if 0
-        scheduler_add_task(new example_task());
-        scheduler_add_task(new example_alarm());
-        scheduler_add_task(new example_logger_qset());
-        scheduler_add_task(new example_nv_vars());
-    #endif
+#if 0
+    scheduler_add_task(new example_task());
+    scheduler_add_task(new example_alarm());
+    scheduler_add_task(new example_logger_qset());
+    scheduler_add_task(new example_nv_vars());
+#endif
 
     /**
 	 * Try the rx / tx tasks together to see how they queue data to each other.
 	 */
-    #if 0
-        scheduler_add_task(new queue_tx());
-        scheduler_add_task(new queue_rx());
-    #endif
+#if 0
+    scheduler_add_task(new queue_tx());
+    scheduler_add_task(new queue_rx());
+#endif
 
     /**
      * Another example of shared handles and producer/consumer using a queue.
      * In this example, producer will produce as fast as the consumer can consume.
      */
-    #if 0
-        scheduler_add_task(new producer());
-        scheduler_add_task(new consumer());
-    #endif
+#if 0
+    scheduler_add_task(new producer());
+    scheduler_add_task(new consumer());
+#endif
 
     /**
      * If you have RN-XV on your board, you can connect to Wifi using this task.
@@ -118,11 +119,19 @@ int main(void)
      *     addCommandChannel(Uart3::getInstance(), false);
      * @endcode
      */
-    #if 0
-        Uart3 &u3 = Uart3::getInstance();
-        u3.init(WIFI_BAUD_RATE, WIFI_RXQ_SIZE, WIFI_TXQ_SIZE);
-        scheduler_add_task(new wifiTask(Uart3::getInstance(), PRIORITY_LOW));
-    #endif
+#if 0
+    Uart3 &u3 = Uart3::getInstance();
+    u3.init(WIFI_BAUD_RATE, WIFI_RXQ_SIZE, WIFI_TXQ_SIZE);
+    scheduler_add_task(new wifiTask(Uart3::getInstance(), PRIORITY_LOW));
+#endif
+
+#define CONTROLLER
+
+#ifdef CONTROLLER
+    xTaskCreate(controller, (const char *)"controller", 2048, NULL, 2, NULL);
+#else
+    xTaskCreate(console, (const char *)"console", 2048, NULL, 2, NULL);
+#endif
 
     scheduler_start(); ///< This shouldn't return
     return -1;
