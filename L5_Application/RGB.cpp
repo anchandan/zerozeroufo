@@ -134,6 +134,15 @@ void RGB::drawPixel(uint16_t x, uint16_t y, uint16_t c) {
     uint8_t r, g, b;
     volatile uint8_t *coloradder;
 
+    /* wrap-around decrement rows for 32x64 segments, workaround for display offset bug */
+    if (y == 0) {
+        y = 31;
+    } else if (y == 32) {
+        y = 63;
+    } else {
+        y--;
+    }
+
     if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
 
     r = (c >> 12) & 0xF;        // RRRRrggggggbbbbb
