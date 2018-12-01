@@ -2,15 +2,16 @@
 
 CMPE 244 Fall 2018: [Zero Zero Ufo](http://socialledge.com/sjsu/index.php/F18:_Zero_Zero_UFO)
 
------------------------------------------------------------------------------
-To get started, have a look at L5_Application/main.cpp and the example tasks.
+## Team
 
-You can change a #define 0 to #define 1 for one example at a time and look
-through the code of each example.
-
-The general idea is to interact with the project through terminal commands.
------------------------------------------------------------------------------
-See "ChangeLog" for the changes made to the sample project source code.
------------------------------------------------------------------------------
+- Pooja Mahendra Baviskar ()
+- Aman Chandan ()
+- Himanshu Gunjal ()
+- Neel Patel ()
+- Oliver Zhu (012485707)
 
 ## Compilation and installation
+
+## TODO
+
+Code for controller uses the `ZZU_CONTROLLER` compile mask. Code for the console does not use this mask.
