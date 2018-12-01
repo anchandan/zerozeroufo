@@ -1,7 +1,41 @@
-#include "wireless.h"
+/*
+ *     SocialLedge.com - Copyright (C) 2013
+ *
+ *     This file is part of free software framework for embedded processors.
+ *     You can use it and/or distribute it as long as this copyright header
+ *     remains unmodified.  The code is free for personal use and requires
+ *     permission to use in a commercial product.
+ *
+ *      THIS SOFTWARE IS PROVIDED "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED
+ *      OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF
+ *      MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE.
+ *      I SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR
+ *      CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
+ *
+ *     You can reach the author of this software at :
+ *          p r e e t . w i k i @ g m a i l . c o m
+ */
+ /**
+ * @file
+ * @brief This is the application entry point.
+ *          FreeRTOS and stdio printf is pre-configured to use uart0_min.h before main() enters.
+ *          @see L0_LowLevel/lpc_sys.h if you wish to override printf/scanf functions.
+ *
+ */
+#include "LPC17xx.h"
+#include "sys_config.h"
 #include "tasks.hpp"
 #include "examples/examples.hpp"
-#include "LPC17xx.h"
+#include "wireless.h"
+
+#include "GFX.hpp"
+#include "RGB.hpp"
+#include <time.h>
+#ifdef ZZU_CONSOLE
+#include "console.hpp"
+#endif /* ZZU_CONSOLE */
+
+#if 0
 #include "utilities.h"
 #include "uart0_min.h"
 #include "math.h"
@@ -17,11 +51,7 @@
 #include "storage.hpp"
 #include "i2c2.hpp"
 //#include "mesh.h"
-
-#include "GFX.hpp"
-#include "RGB.hpp"
-#include <stdlib.h>
-#include <time.h>
+#endif
 
 RGB rgbobj;
 uint32_t accel_value;
@@ -342,75 +372,69 @@ void Game_Screen(void *pv)
    }
 
 }
+
 int main(void)
 {
-
     scheduler_add_task(new terminalTask(PRIORITY_HIGH));
 
     /* Consumes very little CPU, but need highest priority to handle mesh network ACKs */
     scheduler_add_task(new wirelessTask(PRIORITY_CRITICAL));
 
-    orientationQ = xQueueCreate(1, sizeof(accel_value));
-
 #if 1
-        rgbobj.init(32, 19, 20, 22, 23, 28, 6, 29, 7, true, 64);
-        isr_register(TIMER0_IRQn, TIMER0_IRQHandler);  //Registers Timer Interrupt
-        rgbobj.begin();
-        //xTaskCreate(RGB_StartScreen,"Start_Screen",256,NULL,1,NULL);
-        //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
-        xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
-        xTaskCreate(Wireless_Receive,"Wireless_Receive",256, NULL, PRIORITY_HIGH, NULL);
-
+    orientationQ = xQueueCreate(1, sizeof(accel_value));
+    rgbobj.init(32, 19, 20, 22, 23, 28, 6, 29, 7, true, 64);
+    isr_register(TIMER0_IRQn, TIMER0_IRQHandler);  //Registers Timer Interrupt
+    rgbobj.begin();
+    //xTaskCreate(RGB_StartScreen,"Start_Screen",256,NULL,1,NULL);
+    //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
+    xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
+    xTaskCreate(Wireless_Receive,"Wireless_Receive",256, NULL, PRIORITY_HIGH, NULL);
 #endif
 
-    #if 0
+#if 0
     const bool run_1Khz = false;
     scheduler_add_task(new periodicSchedulerTask(run_1Khz));
-    #endif
 
-    #if 0
-        scheduler_add_task(new example_io_demo());
-    #endif
+    scheduler_add_task(new example_io_demo());
 
-    #if 0
-        scheduler_add_task(new example_task());
-        scheduler_add_task(new example_alarm());
-        scheduler_add_task(new example_logger_qset());
-        scheduler_add_task(new example_nv_vars());
-    #endif
+    scheduler_add_task(new example_task());
+    scheduler_add_task(new example_alarm());
+    scheduler_add_task(new example_logger_qset());
+    scheduler_add_task(new example_nv_vars());
 
-    #if 0
-        scheduler_add_task(new queue_tx());
-        scheduler_add_task(new queue_rx());
-    #endif
+    scheduler_add_task(new queue_tx());
+    scheduler_add_task(new queue_rx());
 
-    #if 0
-        scheduler_add_task(new producer());
-        scheduler_add_task(new consumer());
-    #endif
+    scheduler_add_task(new producer());
+    scheduler_add_task(new consumer());
 
-    #if 0
-        Uart3 &u3 = Uart3::getInstance();
-        u3.init(WIFI_BAUD_RATE, WIFI_RXQ_SIZE, WIFI_TXQ_SIZE);
-        scheduler_add_task(new wifiTask(Uart3::getInstance(), PRIORITY_LOW));
-    #endif
-    #if 0
-        // send task
-        uint8_t addr=106;
-        const char Hops=0;
-      //  mesh_packet_t mesh;
-       // uint8_t send = 22;
-        char str = 2;
-        printf("\n outside while");
-        while(1)
-        {
-          mesh_send(addr, mesh_pkt_nack, &str, 1, Hops);
-          printf("\nSending");
-          delay_ms(1000);
-          //vTaskDelay(1000);
-        }
-    #endif
+    Uart3 &u3 = Uart3::getInstance();
+    u3.init(WIFI_BAUD_RATE, WIFI_RXQ_SIZE, WIFI_TXQ_SIZE);
+    scheduler_add_task(new wifiTask(Uart3::getInstance(), PRIORITY_LOW));
+#endif
 
+#if 0
+    // send task
+    uint8_t addr=106;
+    const char Hops=0;
+    //  mesh_packet_t mesh;
+    // uint8_t send = 22;
+    char str = 2;
+    printf("\n outside while");
+    while(1) {
+        mesh_send(addr, mesh_pkt_nack, &str, 1, Hops);
+        printf("\nSending");
+        delay_ms(1000);
+        //vTaskDelay(1000);
+    }
+#endif
+
+#ifdef ZZU_CONTROLLER
+    xTaskCreate(controller, (const char *)"controller", 2048, NULL, 2, NULL);
+#endif /* ZZU_CONTROLLER */
+#ifdef ZZU_CONSOLE
+    //xTaskCreate(console, (const char *)"console", 2048, NULL, 2, NULL);
+#endif /* ZZU_CONSOLE */
 
     scheduler_start(); ///< This shouldn't return
     return -1;
