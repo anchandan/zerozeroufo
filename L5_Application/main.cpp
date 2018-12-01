@@ -27,6 +27,10 @@
 #include "tasks.hpp"
 #include "examples/examples.hpp"
 
+#ifdef ZZU_CONSOLE
+#include "console.hpp"
+#endif /* ZZU_CONSOLE */
+
 /**
  * The main() creates tasks or "threads".  See the documentation of scheduler_task class at scheduler_task.hpp
  * for details.  There is a very simple example towards the beginning of this class's declaration.
@@ -125,13 +129,12 @@ scheduler_add_task(new periodicSchedulerTask(run_1Khz));
     scheduler_add_task(new wifiTask(Uart3::getInstance(), PRIORITY_LOW));
 #endif
 
-#define CONTROLLER
-
-#ifdef CONTROLLER
+#ifdef ZZU_CONTROLLER
     xTaskCreate(controller, (const char *)"controller", 2048, NULL, 2, NULL);
-#else
+#endif /* ZZU_CONTROLLER */
+#ifdef ZZU_CONSOLE
     xTaskCreate(console, (const char *)"console", 2048, NULL, 2, NULL);
-#endif
+#endif /* ZZU_CONSOLE */
 
     scheduler_start(); ///< This shouldn't return
     return -1;

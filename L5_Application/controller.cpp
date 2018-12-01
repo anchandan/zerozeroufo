@@ -1,10 +1,10 @@
-#include "LabQueue.hpp"
-#include "LabAdc.hpp"
+//#include "LabQueue.hpp"
+//#include "LabAdc.hpp"
 #include "acceleration_sensor.hpp"
 #include "io.hpp"
 #include "wireless.h"
 
-#ifdef CONTROLLER
+#ifdef ZZU_CONTROLLER
 
 void controller(void *p) /* HIGH priority */
 {
@@ -60,4 +60,4 @@ void controller(void *p) /* HIGH priority */
 #endif
 }
 
-#endif /* CONTROLLER */
+#endif /* ZZU_CONTROLLER */

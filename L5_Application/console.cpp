@@ -1,10 +1,10 @@
-#include "LabQueue.hpp"
-#include "LabAdc.hpp"
+//#include "LabQueue.hpp"
+//#include "LabAdc.hpp"
 #include "acceleration_sensor.hpp"
 #include "io.hpp"
 #include "wireless.h"
 
-#ifndef CONTROLLER
+#ifdef ZZU_CONSOLE
 
 void console(void *p) /* HIGH priority */
 {
@@ -18,8 +18,9 @@ void console(void *p) /* HIGH priority */
             wireless_deform_pkt(&pkt, 2,
                                 &header, sizeof(header),
                                 &x, sizeof(x));
+        }
         vTaskDelay(20);
     }
 }
 
-#endif /* !CONTROLLER */
+#endif /* ZZU_CONSOLE */
