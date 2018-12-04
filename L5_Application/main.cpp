@@ -283,7 +283,11 @@ int main(void)
         //vTaskDelay(1000);
     }
 #endif
-    xTaskCreate(controller, (const char *)"controller", 1024, NULL, PRIORITY_MEDIUM, NULL);
+    //xTaskCreate(controller, (const char *)"controller", 1024, NULL, PRIORITY_MEDIUM, NULL);
+    xTaskCreate(wireless_transmit,"wireless_transmit",256,NULL,PRIORITY_MEDIUM,NULL);
+    //consumer_queue = xQueueCreate(10,sizeof(int));
+    //xTaskCreate(consumer,"consumer",256,NULL,PRIORITY_HIGH,NULL);
+    xTaskCreate(producer,"producer",256,NULL,PRIORITY_MEDIUM,NULL);
 #endif /* ZZU_CONTROLLER */
 
 #ifdef ZZU_CONSOLE
