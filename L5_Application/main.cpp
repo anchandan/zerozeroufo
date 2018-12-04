@@ -283,11 +283,28 @@ int main(void)
         //vTaskDelay(1000);
     }
 #endif
+#if 0
     //xTaskCreate(controller, (const char *)"controller", 1024, NULL, PRIORITY_MEDIUM, NULL);
     xTaskCreate(wireless_transmit,"wireless_transmit",256,NULL,PRIORITY_MEDIUM,NULL);
     //consumer_queue = xQueueCreate(10,sizeof(int));
     //xTaskCreate(consumer,"consumer",256,NULL,PRIORITY_HIGH,NULL);
     xTaskCreate(producer,"producer",256,NULL,PRIORITY_MEDIUM,NULL);
+#endif
+
+    xSemaphore = xSemaphoreCreateBinary();
+    gpio_interrupt.Initialize();
+
+    // Register C function which delegates interrupt handling to your C++ class function
+    isr_register(EINT3_IRQn, Eint3Handler);
+
+    // Create tasks and test your interrupt handler
+    scheduler_add_task(new toggle_led(0));
+    gpio_interrupt.AttachInterruptHandler(0, 30, user_toggle_cb, kBothEdges);
+    gpio_interrupt.AttachInterruptHandler(2, 4, user_toggle_cb, kRisingEdge);
+    scheduler_add_task(new read_switch(0));
+    scheduler_add_task(new toggle_led(0));
+    scheduler_add_task(new read_switch(1));
+    scheduler_add_task(new toggle_led(1));
 #endif /* ZZU_CONTROLLER */
 
 #ifdef ZZU_CONSOLE
