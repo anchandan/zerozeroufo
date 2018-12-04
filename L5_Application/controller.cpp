@@ -4,11 +4,10 @@
 #include "io.hpp"
 #include "wireless.h"
 
-#ifdef ZZU_CONTROLLER
-
 void controller(void *p) /* HIGH priority */
 {
-    //orientation_t orientation = invalid;
+#if 0
+    orientation_t orientation = invalid;
     int x, y, z;
     //uint8_t device = 0x39;  /* 0x38 */
 
@@ -47,9 +46,10 @@ void controller(void *p) /* HIGH priority */
         u0_dbg_printf("sent orientation\n");
 
         //orientation = up;
-        wireless_send(addr, mesh_pkt_nack, (const void *)&x, sizeof(x), 0);
+        wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, (const void *)&x, sizeof(x), 0);
         vTaskDelay(20);
     }
+#endif
 #if 0
     orientation_t orientation = invalid;
     while (1) {
@@ -59,5 +59,3 @@ void controller(void *p) /* HIGH priority */
     }
 #endif
 }
-
-#endif /* ZZU_CONTROLLER */

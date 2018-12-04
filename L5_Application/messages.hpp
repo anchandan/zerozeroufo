@@ -10,6 +10,7 @@
 
 
 #include "wireless.h"
+#include "sys_config.h"
 
 
 /* Message opcodes */

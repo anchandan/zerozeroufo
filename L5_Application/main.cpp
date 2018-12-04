@@ -22,7 +22,6 @@
  *          @see L0_LowLevel/lpc_sys.h if you wish to override printf/scanf functions.
  *
  */
-#include "sys_config.h"
 #include "tasks.hpp"
 #include "examples/examples.hpp"
 
@@ -269,6 +268,7 @@ int main(void)
 #endif
 
 #ifdef ZZU_CONTROLLER
+#if 0
     // send task
     uint8_t addr=106;
     const char Hops=0;
@@ -282,7 +282,8 @@ int main(void)
         delay_ms(1000);
         //vTaskDelay(1000);
     }
-    xTaskCreate(controller, (const char *)"controller", 2048, NULL, 2, NULL);
+#endif
+    xTaskCreate(controller, (const char *)"controller", 1024, NULL, PRIORITY_MEDIUM, NULL);
 #endif /* ZZU_CONTROLLER */
 
 #ifdef ZZU_CONSOLE
@@ -298,7 +299,7 @@ int main(void)
     xTaskCreate(title_screen, "title screen", 256, NULL, PRIORITY_LOW, NULL);
     //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
     //xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
-    xTaskCreate(receive_msg, "receive messages", 256, NULL, PRIORITY_CRITICAL, NULL);
+    xTaskCreate(receive_msg, "receive messages", 256, NULL, PRIORITY_CRITICAL /* TODO */, NULL);
 
     //xTaskCreate(console, (const char *)"console", 2048, NULL, 2, NULL);
 #endif /* ZZU_CONSOLE */

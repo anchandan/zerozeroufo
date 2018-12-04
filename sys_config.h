@@ -28,7 +28,7 @@ extern "C" {
 
 
 /* Compile masks for Zero Zero Ufo */
-#if 1
+#if 0
 #define ZZU_CONSOLE
 #else
 #define ZZU_CONTROLLER
@@ -43,7 +43,14 @@ extern "C" {
  *
  * @warning Go to   "PROJECT" --> "Clean"   if you change the settings here.
  */
-#define WIRELESS_NODE_ADDR              105    ///< Any value from 1-254
+#define CONSOLE_NODE_ADDR               105
+#define CONTROLLER_NODE_ADDR            69
+
+#ifdef ZZU_CONSOLE
+#define WIRELESS_NODE_ADDR              CONSOLE_NODE_ADDR    ///< Any value from 1-254
+#else /* ZZU_CONSOLE <-> ZZU_CONTROLLER */
+#define WIRELESS_NODE_ADDR              CONTROLLER_NODE_ADDR    ///< Any value from 1-254
+#endif /* ZZU_CONTROLLER */
 #define WIRELESS_CHANNEL_NUM            2510   ///< 2402 - 2500 to avoid collisions among 2+ mesh networks
 #define WIRELESS_AIR_DATARATE_KBPS      2000   ///< Air data rate, can only be 250, 1000, or 2000 kbps
 #define WIRELESS_NODE_NAME             "node"  ///< Wireless node name (ping response contains this name)
