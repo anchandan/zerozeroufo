@@ -28,8 +28,11 @@ extern "C" {
 
 
 /* Compile masks for Zero Zero Ufo */
-//#define ZZU_CONTROLLER
+#if 1
 #define ZZU_CONSOLE
+#else
+#define ZZU_CONTROLLER
+#endif
 
 /** @{ Nordic wireless configuration
  * More settings can be configured at mesh_config.h

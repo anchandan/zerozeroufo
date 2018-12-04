@@ -31,17 +31,6 @@ RGB &displayUpdate = RGB::getRGBInstance();
 volatile uint8_t colorbuffer[2048]={0};
 RGB* RGB::rgbInstance=0;
 
-//extern "C" void TIMER0_IRQHandler (void)
-//{
-//    if((LPC_TIM0->IR & 0x01) == 0x01) // if MR0 interrupt
-//    {
-//        LPC_TIM0->IR |= 1 << 0; // Clear MR0 interrupt flag
-//        refreshISR();
-//    }
-//
-//}
-
-
 RGB::RGB():GFX(64,64){
 
 }
