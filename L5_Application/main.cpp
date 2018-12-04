@@ -22,21 +22,19 @@
  *          @see L0_LowLevel/lpc_sys.h if you wish to override printf/scanf functions.
  *
  */
-#include "LPC17xx.h"
 #include "sys_config.h"
 #include "tasks.hpp"
 #include "examples/examples.hpp"
-#include "wireless.h"
 
-#include "GFX.hpp"
-#include "RGB.hpp"
-#include <time.h>
+#ifdef ZZU_CONTROLLER
+#include "controller.hpp"
+#endif /* ZZU_CONTROLLER */
+
 #ifdef ZZU_CONSOLE
 #include "console.hpp"
 #endif /* ZZU_CONSOLE */
 
 #if 0
-#include "utilities.h"
 #include "uart0_min.h"
 #include "math.h"
 #include "stdio.h"
@@ -53,72 +51,15 @@
 //#include "mesh.h"
 #endif
 
-RGB rgbobj;
-uint32_t accel_value;
-
-/*******COLORS*********/
-
-#define WHITE  0xFFFF
-#define GRAY   0x000F
-#define MAGENTA 0xF81F
-#define RED    0xF800
-#define GREEN  0x202
-#define CYAN   0x01FF
-#define VIOLET 0xFFE0
-#define BLUE   0x85DD
-#define PINK   0xFF00
-#define BLACK  0x0000
-//#define YELLOW
-/**********************/
-
 int x_Boom, y_Boom, x_UFO_top, y_UFO_top,x_UFO_bot,y_UFO_bot;
 int score=0;
-QueueHandle_t orientationQ;
 
-void TIMER0_IRQHandler (void)
-{
-    if((LPC_TIM0->IR & 0x01) == 0x01) // if MR0 interrupt
-    {
-        LPC_TIM0->IR |= 1 << 0; // Clear MR0 interrupt flag
-        rgbobj.updateDisplay();
-    }
-}
-
-void Wireless_Receive(void *p)
-{
-    mesh_packet_t pkt;
-    // uint32_t message ;
-    while(1)
-    {
-      if(wireless_get_rx_pkt(&pkt,50))
-      {
-         //printf("Packet received\n");
-         wireless_deform_pkt(&pkt,1,&accel_value,sizeof(accel_value));
-         xQueueSend(orientationQ, &accel_value, 0);
-         printf("xQueueSend here: %d \t\n", accel_value);
-         //printf("accel_value:%lu\n",accel_value);
-         //wireless_flush_rx();
-      }
-    }
-}
-
-void Draw_UFO_Start(uint8_t x, uint8_t y)
-{
-
-    rgbobj.drawPixel(x,y,VIOLET);
-    rgbobj.drawLine(x-1,y+1,x+1,y+1,VIOLET);
-    rgbobj.drawLine(x-3,y+2,x+3,y+2,VIOLET);
-    delay_ms(50);
-    rgbobj.drawPixel(x,y,BLACK);
-    rgbobj.drawLine(x-1,y+1,x+1,y+1,BLACK);
-    rgbobj.drawLine(x-3,y+2,x+3,y+2,BLACK);
-}
-
+#ifdef ZZU_CONSOLE
 void Draw_UFO(uint8_t x, uint8_t y)
 {
-    rgbobj.drawPixel(x,y,VIOLET);
-    rgbobj.drawLine(x-1,y+1,x+1,y+1,VIOLET);
-    rgbobj.drawLine(x-3,y+2,x+3,y+2,VIOLET);
+    rgb.drawPixel(x,y,VIOLET);
+    rgb.drawLine(x-1,y+1,x+1,y+1,VIOLET);
+    rgb.drawLine(x-3,y+2,x+3,y+2,VIOLET);
     x_UFO_top = x+1;
     y_UFO_top = y;
     x_UFO_bot = x+3;
@@ -128,95 +69,30 @@ void Draw_UFO(uint8_t x, uint8_t y)
 
 void Clear_UFO(uint8_t x, uint8_t y)
 {
-    rgbobj.drawPixel(x,y,BLACK);
-    rgbobj.drawLine(x-1,y+1,x+1,y+1,BLACK);
-    rgbobj.drawLine(x-3,y+2,x+3,y+2,BLACK);
+    rgb.drawPixel(x,y,BLACK);
+    rgb.drawLine(x-1,y+1,x+1,y+1,BLACK);
+    rgb.drawLine(x-3,y+2,x+3,y+2,BLACK);
 }
 
-void RGB_StartScreen(void *pv)
-{
-    srand(time(NULL));
-    //Zero
-    rgbobj.drawChar(3,5,'Z',GREEN,1,1 );
-    rgbobj.drawChar(10,5,'E',GREEN,1,1 );
-    rgbobj.drawChar(17,5,'R',GREEN,1,1 );
-    rgbobj.drawChar(24,5,'0',GREEN,1,1 );
-    //Zero
-    rgbobj.drawChar(35,5,'Z',GREEN,1,1 );
-    rgbobj.drawChar(42,5,'E',GREEN,1,1 );
-    rgbobj.drawChar(49,5,'R',GREEN,1,1 );
-    rgbobj.drawChar(56,5,'0',GREEN,1,1 );
-    //UFO
-    rgbobj.drawChar(22,15,'U',WHITE,1,1 );
-    rgbobj.drawChar(29,15,'F',WHITE,1,1 );
-    rgbobj.drawChar(36,15,'O',WHITE,1,1 );
-
-    //Start
-    rgbobj.drawChar(17,52,'S',RED,1,1 );
-    rgbobj.drawChar(24,52,'T',RED,1,1 );
-    rgbobj.drawChar(31,52,'A',RED,1,1 );
-    rgbobj.drawChar(38,52,'R',RED,1,1 );
-    rgbobj.drawChar(45,52,'T',RED,1,1 );
-
-     //square
-    rgbobj.drawFastHLine(0 ,0 ,64,BLUE);
-    rgbobj.drawFastHLine(0 ,1 ,64,BLUE);
-
-    rgbobj.drawFastHLine(0 ,61,64,BLUE);
-    rgbobj.drawFastHLine(0 ,62,64,BLUE);
-
-    rgbobj.drawFastVLine(0 ,0 ,64,BLUE);
-    rgbobj.drawFastVLine(1 ,0 ,64,BLUE);
-
-    rgbobj.drawFastVLine(62,0 ,64,BLUE);
-    rgbobj.drawFastVLine(63,0 ,64,BLUE);
-
-    //UFO
-    int x= 7;
-    int y = 50;
-    int sd=0;
-    while(1)
-    {
-        while(y > 25 & x<=58)
-        {
-
-               Draw_UFO_Start(x++,y--);
-
-               //Clear_UFO(x,y);
-               delay_ms(15);
-
-        }
-        while(sd<=25 & x<=58)
-        {
-            Draw_UFO_Start(x++,y++);
-            sd++;
-            delay_ms(15);
-            if(sd==0)
-            {
-                x=7;
-                y=50;
-            }
-        }
-    }
-}
 
 void RGB_BoomScreen()
 {
     while(1)
     {
-        rgbobj.fillScreen(BLACK);
+        rgb.fillScreen(BLACK);
 
-        rgbobj.drawChar(10,33,'B',RED,1,2 );
-        rgbobj.drawChar(21,33,'O',RED,1,2 );
-        rgbobj.drawChar(32,33,'O',RED,1,2 );
-        rgbobj.drawChar(43,33,'M',RED,1,2 );
-        rgbobj.drawChar(54,33,'!',RED,1,2 );
-        printf("---->score:------>%d\n", score);
+        rgb.drawChar(10,33,'B',RED,1,2 );
+        rgb.drawChar(21,33,'O',RED,1,2 );
+        rgb.drawChar(32,33,'O',RED,1,2 );
+        rgb.drawChar(43,33,'M',RED,1,2 );
+        rgb.drawChar(54,33,'!',RED,1,2 );
+        u0_dbg_printf("---->score:------>%d\n", score);
     }
 
 }
 
 
+#if 0
 void RGB_UFO(void *pv)
 {
     srand(time(NULL));
@@ -224,16 +100,18 @@ void RGB_UFO(void *pv)
     int y=25;
     while(1)
     {
-        rgbobj.fillScreen(BLACK);
+        rgb.fillScreen(BLACK);
         Draw_UFO_Start(x++,y);
         vTaskDelay(25);
         if(x>60)
         x=3;
     }
 }
+#endif
 
 void Game_Screen(void *pv)
 {
+    uint32_t accel_value;
    srand(time(NULL));
 
    int direction = 0;
@@ -249,10 +127,10 @@ void Game_Screen(void *pv)
    y3= rand()%5+5;
 
    //Border
-   rgbobj.drawFastHLine(0,0,64,WHITE);
-   rgbobj.drawFastHLine(0,1,64,WHITE);
-   rgbobj.drawFastHLine(0,62,64,WHITE);
-   rgbobj.drawFastHLine(0,63,64,WHITE);
+   rgb.drawFastHLine(0,0,64,WHITE);
+   rgb.drawFastHLine(0,1,64,WHITE);
+   rgb.drawFastHLine(0,62,64,WHITE);
+   rgb.drawFastHLine(0,63,64,WHITE);
 /*
 
    while(1)
@@ -270,14 +148,14 @@ void Game_Screen(void *pv)
    {
        score++;
        Draw_UFO(x,y);
-       printf("%d\n",accel_value);
+       u0_dbg_printf("%d\n",accel_value);
         //moving the obstacles
 
 
-        rgbobj.drawObstacle(x1,y1,3,height1,RED);
-        rgbobj.drawObstacle(x2,y2,3,height2,GREEN);
-        rgbobj.drawObstacle(x3,y3,2,height3,BLUE);
-        rgbobj.drawObstacle(x3,y3+35,2,height3,BLUE);
+        rgb.drawObstacle(x1,y1,3,height1,RED);
+        rgb.drawObstacle(x2,y2,3,height2,GREEN);
+        rgb.drawObstacle(x3,y3,2,height3,BLUE);
+        rgb.drawObstacle(x3,y3+35,2,height3,BLUE);
 
         if(score<=150)
             delay_ms(80);
@@ -286,10 +164,10 @@ void Game_Screen(void *pv)
         else if(score>225)
             delay_ms(30);
 
-        rgbobj.drawObstacle(x1,y1,3,height1,BLACK);
-        rgbobj.drawObstacle(x2,y2,3,height2,BLACK);
-        rgbobj.drawObstacle(x3,y3,2,height3,BLACK);
-        rgbobj.drawObstacle(x3,y3+35,2,height3,BLACK);
+        rgb.drawObstacle(x1,y1,3,height1,BLACK);
+        rgb.drawObstacle(x2,y2,3,height2,BLACK);
+        rgb.drawObstacle(x3,y3,2,height3,BLACK);
+        rgb.drawObstacle(x3,y3+35,2,height3,BLACK);
 
 
 /* check why not working
@@ -321,7 +199,7 @@ void Game_Screen(void *pv)
         else
             y++;
 */
-        xQueueReceive(orientationQ, &orientationQ_Buffer, 5);
+        xQueueReceive(orientation_q, &orientationQ_Buffer, 5);
         accel_value = orientationQ_Buffer;
         //printf("accel_value: %lu, \t co: %d\n ",accel_value,co++);
 
@@ -372,6 +250,7 @@ void Game_Screen(void *pv)
    }
 
 }
+#endif /* ZZU_CONSOLE */
 
 int main(void)
 {
@@ -380,40 +259,16 @@ int main(void)
     /* Consumes very little CPU, but need highest priority to handle mesh network ACKs */
     scheduler_add_task(new wirelessTask(PRIORITY_CRITICAL));
 
-#if 1
-    orientationQ = xQueueCreate(1, sizeof(accel_value));
-    rgbobj.init(32, 19, 20, 22, 23, 28, 6, 29, 7, true, 64);
-    isr_register(TIMER0_IRQn, TIMER0_IRQHandler);  //Registers Timer Interrupt
-    rgbobj.begin();
-    //xTaskCreate(RGB_StartScreen,"Start_Screen",256,NULL,1,NULL);
-    //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
-    xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
-    xTaskCreate(Wireless_Receive,"Wireless_Receive",256, NULL, PRIORITY_HIGH, NULL);
-#endif
-
 #if 0
     const bool run_1Khz = false;
     scheduler_add_task(new periodicSchedulerTask(run_1Khz));
-
-    scheduler_add_task(new example_io_demo());
-
-    scheduler_add_task(new example_task());
-    scheduler_add_task(new example_alarm());
-    scheduler_add_task(new example_logger_qset());
-    scheduler_add_task(new example_nv_vars());
-
-    scheduler_add_task(new queue_tx());
-    scheduler_add_task(new queue_rx());
-
-    scheduler_add_task(new producer());
-    scheduler_add_task(new consumer());
 
     Uart3 &u3 = Uart3::getInstance();
     u3.init(WIFI_BAUD_RATE, WIFI_RXQ_SIZE, WIFI_TXQ_SIZE);
     scheduler_add_task(new wifiTask(Uart3::getInstance(), PRIORITY_LOW));
 #endif
 
-#if 0
+#ifdef ZZU_CONTROLLER
     // send task
     uint8_t addr=106;
     const char Hops=0;
@@ -427,12 +282,24 @@ int main(void)
         delay_ms(1000);
         //vTaskDelay(1000);
     }
-#endif
-
-#ifdef ZZU_CONTROLLER
     xTaskCreate(controller, (const char *)"controller", 2048, NULL, 2, NULL);
 #endif /* ZZU_CONTROLLER */
+
 #ifdef ZZU_CONSOLE
+    update_display_semphr = xSemaphoreCreateBinary();
+    orientation_q = xQueueCreate(1, sizeof(uint32_t));
+    control_q = xQueueCreate(1, sizeof(uint32_t));
+
+    isr_register(TIMER0_IRQn, timer0_ISR);
+    rgb.init(32, 19, 20, 22, 23, 28, 6, 29, 7, true, 64);
+    rgb.begin();
+
+    //xTaskCreate(update_display_task, "update display", 256, NULL, PRIORITY_HIGH, NULL);
+    xTaskCreate(title_screen, "title screen", 256, NULL, PRIORITY_LOW, NULL);
+    //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
+    //xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
+    xTaskCreate(receive_msg, "receive messages", 256, NULL, PRIORITY_CRITICAL, NULL);
+
     //xTaskCreate(console, (const char *)"console", 2048, NULL, 2, NULL);
 #endif /* ZZU_CONSOLE */
 
