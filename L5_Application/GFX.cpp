@@ -74,10 +74,6 @@ void GFX::drawFastVLine(uint16_t x, uint16_t y,uint16_t h, uint16_t color) {
 }
 
 void GFX::drawFastHLine(uint16_t x, uint16_t y,uint16_t w, uint16_t color) {
-    if(y>=0 && y<= 31)
-        y--;
-    else if(y>=32 && y<=63)
-        y--;
     drawLine(x, y, x+w-1, y, color);
 }
 
