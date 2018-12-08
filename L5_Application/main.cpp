@@ -50,10 +50,10 @@
 //#include "mesh.h"
 #endif
 
+#ifdef ZZU_CONSOLE
 int x_Boom, y_Boom, x_UFO_top, y_UFO_top,x_UFO_bot,y_UFO_bot;
 int score=0;
 
-#ifdef ZZU_CONSOLE
 void Draw_UFO(uint8_t x, uint8_t y)
 {
     rgb.drawPixel(x,y,VIOLET);
@@ -268,43 +268,15 @@ int main(void)
 #endif
 
 #ifdef ZZU_CONTROLLER
-#if 0
-    // send task
-    uint8_t addr=106;
-    const char Hops=0;
-    //  mesh_packet_t mesh;
-    // uint8_t send = 22;
-    char str = 2;
-    printf("\n outside while");
-    while(1) {
-        mesh_send(addr, mesh_pkt_nack, &str, 1, Hops);
-        printf("\nSending");
-        delay_ms(1000);
-        //vTaskDelay(1000);
-    }
-#endif
-#if 0
     //xTaskCreate(controller, (const char *)"controller", 1024, NULL, PRIORITY_MEDIUM, NULL);
-    xTaskCreate(wireless_transmit,"wireless_transmit",256,NULL,PRIORITY_MEDIUM,NULL);
     //consumer_queue = xQueueCreate(10,sizeof(int));
     //xTaskCreate(consumer,"consumer",256,NULL,PRIORITY_HIGH,NULL);
-    xTaskCreate(producer,"producer",256,NULL,PRIORITY_MEDIUM,NULL);
-#endif
+    xTaskCreate(orient, "orient", 512, NULL, PRIORITY_MEDIUM, NULL);
+    xTaskCreate(wireless_transmit, "wireless_transmit", 256, NULL, PRIORITY_LOW, NULL);
 
-    xSemaphore = xSemaphoreCreateBinary();
-    gpio_interrupt.Initialize();
-
-    // Register C function which delegates interrupt handling to your C++ class function
-    isr_register(EINT3_IRQn, Eint3Handler);
-
-    // Create tasks and test your interrupt handler
-    scheduler_add_task(new toggle_led(0));
-    gpio_interrupt.AttachInterruptHandler(0, 30, user_toggle_cb, kBothEdges);
-    gpio_interrupt.AttachInterruptHandler(2, 4, user_toggle_cb, kRisingEdge);
-    scheduler_add_task(new read_switch(0));
-    scheduler_add_task(new toggle_led(0));
-    scheduler_add_task(new read_switch(1));
-    scheduler_add_task(new toggle_led(1));
+    isr_register(TIMER0_IRQn, button_detect_isr);
+    xTaskCreate(toggle_led_task, "led", 256, 0, PRIORITY_HIGH + 1, NULL);
+    xTaskCreate(button_detect_task, "button", 256, 0, PRIORITY_HIGH, NULL);
 #endif /* ZZU_CONTROLLER */
 
 #ifdef ZZU_CONSOLE
@@ -319,7 +291,7 @@ int main(void)
     //xTaskCreate(update_display_task, "update display", 256, NULL, PRIORITY_HIGH, NULL);
     xTaskCreate(title_screen, "title screen", 256, NULL, PRIORITY_LOW, NULL);
     //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
-    //xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
+    xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
     xTaskCreate(receive_msg, "receive messages", 256, NULL, PRIORITY_CRITICAL /* TODO */, NULL);
 
     //xTaskCreate(console, (const char *)"console", 2048, NULL, 2, NULL);
