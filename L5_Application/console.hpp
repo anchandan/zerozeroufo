@@ -10,6 +10,9 @@
 
 #include "LPC17xx.h"
 #include "FreeRTOS.h"
+#if 1
+#include "task.h"
+#endif
 #include "printf_lib.h"
 #include <time.h>
 #include "utilities.h"
@@ -21,7 +24,6 @@
 #include "semphr.h"
 //#include "acceleration_sensor.hpp"
 //#include "io.hpp"
-
 
 /* Colors */
 #define WHITE   0xFFFF
@@ -45,9 +47,18 @@ extern QueueHandle_t control_q;
 
 void timer0_ISR(void);
 void update_display_task(void *p);
-void receive_msg(void *p);
-void title_screen(void *p);
+void receive_message(void *p);
+void start_screen(void *p);
 void console(void *p);
+
+#if 1
+void RGB_BoomScreen(void *p);
+void gameplay(void *p);
+
+extern TaskHandle_t gameplay_h;
+extern TaskHandle_t start_h;
+extern TaskHandle_t BoomScreenHandle;
+#endif
 
 
 #endif /* CONSOLE_HPP_ */
