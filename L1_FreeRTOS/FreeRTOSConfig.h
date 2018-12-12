@@ -137,7 +137,7 @@
 #define configUSE_QUEUE_SETS                1
 #define INCLUDE_vTaskPrioritySet			0
 #define INCLUDE_uxTaskPriorityGet			0
-#define INCLUDE_vTaskDelete					0   ///< A task should never be deleted in an RTOS (why create it only to delete it later?)
+#define INCLUDE_vTaskDelete					1   ///< A task should never be deleted in an RTOS (why create it only to delete it later?)
 #define INCLUDE_vTaskCleanUpResources		0   ///< Ditto ^^
 #define INCLUDE_vTaskSuspend				1
 #define INCLUDE_vTaskDelayUntil				1

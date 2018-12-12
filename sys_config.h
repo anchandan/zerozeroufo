@@ -28,7 +28,7 @@ extern "C" {
 
 
 /* Compile masks for Zero Zero Ufo */
-#if 0
+#if 1
 #define ZZU_CONSOLE
 #else
 #define ZZU_CONTROLLER
