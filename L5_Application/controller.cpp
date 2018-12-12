@@ -212,10 +212,24 @@ void send_message(uint32_t opcode, uint32_t data)
 {
     mesh_packet_t pkt;
 
+#if 0
     wireless_form_pkt(&pkt, CONSOLE_NODE_ADDR, mesh_pkt_nack, 0, 2,
             &opcode, sizeof(opcode),
             &data, sizeof(data));
     //wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &accel_orientation, sizeof(accel_orientation), 0);
+#else
+    uint32_t orientation;
+
+    //wireless_form_pkt(&pkt, CONSOLE_NODE_ADDR, mesh_pkt_nack, 0, 2,
+            //&opcode, sizeof(opcode),
+            //&data, sizeof(data));
+    if (opcode == ZZU_CTRL) {
+        orientation = 100;
+    } else {
+        orientation = data;
+    }
+    wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &orientation, sizeof(orientation), 0);
+#endif
 }
 
 void send_orientation(uint32_t orientation)
@@ -225,9 +239,10 @@ void send_orientation(uint32_t orientation)
 
 void orient(void *p)
 {
-    //int x = 0, y = 0 , z = 0 ,orientation, count = 0, temp = 0;
-    uint16_t x = 0;
+    //uint16_t x = 0;
+    int x = 0;
     uint32_t orientation;
+
     while (1) {
         x = AS.getX();
         if (x > 300) {
@@ -248,9 +263,6 @@ void wireless_transmit(void *p)
 
     while (1) {
         wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &accel_orientation, sizeof(accel_orientation), 0);
-        //count++;
-        //wireless_send(addr, mesh_pkt_nack, "hello", 5, 0);
-        //wireless_send(addr, mesh_pkt_ack, NULL, 0, 0);
         vTaskDelay(50);
     }
 }
