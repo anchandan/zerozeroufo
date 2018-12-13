@@ -33,7 +33,8 @@ class GFX  {
     drawFastHLine(uint16_t x, uint16_t y, uint16_t w, uint16_t color),
     fillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color),
     fillScreen(uint16_t color);
-
+  virtual bool drawPixelCollision(uint16_t x, uint16_t y, uint16_t color) = 0;
+  bool drawLineCollision(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
 
   void
 

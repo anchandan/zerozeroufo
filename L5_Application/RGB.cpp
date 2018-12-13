@@ -110,14 +110,10 @@ void RGB::begin(void) {
     LPC_TIM0->TCR |= 1 << 0; // Start timer
 }
 
-void RGB::drawObstacle(uint16_t x, uint16_t y, uint16_t w, uint16_t h,uint16_t colour)
+void RGB::drawObstacle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colour)
 {
-   GFX::fillRect(x,y,w,h,colour);
-  // delay_ms(5);
-  // GFX::fillRect(x,y,w,h,0x0000);
+    GFX::fillRect(x,y,w,h,colour);
 }
-
-
 
 void RGB::drawPixel(uint16_t x, uint16_t y, uint16_t c) {
     uint8_t r, g, b;
@@ -135,15 +131,13 @@ void RGB::drawPixel(uint16_t x, uint16_t y, uint16_t c) {
         y--;
     }
 
-    if((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
+    if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return;
 
     r = (c >> 12) & 0xF;        // RRRRrggggggbbbbb
     g = (c >>  8) & 0xF;         // rrrrGGGGggbbbbb
     b = (c >>  1) & 0xF;         // rrrrgggggggBBBBb
 
-    //printf("drawpixel called \n");
-
-    if(y < nRows) {
+    if (y < nRows) {
 
         coloradder = &colorbuffer[y * WIDTH  + x]; // Base addr
 
@@ -151,8 +145,7 @@ void RGB::drawPixel(uint16_t x, uint16_t y, uint16_t c) {
         if(r & 1) *coloradder |= 0B00000100; // Plane N R: bit 2
         if(g & 1) *coloradder |= 0B00001000; // Plane N G: bit 3
         if(b & 1) *coloradder |= 0B00010000; // Plane N B: bit 4
-    }
-    else {
+    } else {
 
         coloradder = &colorbuffer[(y - nRows) * WIDTH + x];
 
@@ -160,10 +153,54 @@ void RGB::drawPixel(uint16_t x, uint16_t y, uint16_t c) {
         if(r & 1) *coloradder |= 0B00100000; // Plane N R: bit 5
         if(g & 1) *coloradder |= 0B01000000; // Plane N G: bit 6
         if(b & 1) *coloradder |= 0B10000000; // Plane N B: bit 7
-
-
-
     }
+}
+
+bool RGB::drawPixelCollision(uint16_t x, uint16_t y, uint16_t c) {
+    uint8_t r, g, b;
+    volatile uint8_t *coloradder;
+    bool collision = false;
+
+#if 1
+    /**
+     * workaround for display offset bug
+     * decrement rows for 32x64 segments with wrap-around
+     */
+    if (y == 0) {
+        y = 31;
+    } else if (y == 32) {
+        y = 63;
+    } else {
+        y--;
+    }
+
+    if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height)) return true;
+
+    r = (c >> 12) & 0xF;        // RRRRrggggggbbbbb
+    g = (c >>  8) & 0xF;         // rrrrGGGGggbbbbb
+    b = (c >>  1) & 0xF;         // rrrrgggggggBBBBb
+
+    if (y < nRows) {
+        coloradder = &colorbuffer[y * WIDTH  + x]; // Base addr
+        collision = (*coloradder & 0B00011100) != 0;
+        *coloradder &= ~0B00011100;            // Mask out R,G,B in one op
+
+        if(r & 1) *coloradder |= 0B00000100; // Plane N R: bit 2
+        if(g & 1) *coloradder |= 0B00001000; // Plane N G: bit 3
+        if(b & 1) *coloradder |= 0B00010000; // Plane N B: bit 4
+    } else {
+        coloradder = &colorbuffer[(y - nRows) * WIDTH + x];
+        collision = (*coloradder & 0B11100000) != 0;
+        *coloradder &= ~0B11100000;            // Mask out R,G,B in one op
+
+        if(r & 1) *coloradder |= 0B00100000; // Plane N R: bit 5
+        if(g & 1) *coloradder |= 0B01000000; // Plane N G: bit 6
+        if(b & 1) *coloradder |= 0B10000000; // Plane N B: bit 7
+    }
+#endif//ozhu TODO duplicate code
+    //RGB::drawPixel(x, y, c);
+
+    return collision;
 }
 
 void RGB::fillScreen(uint16_t c) {

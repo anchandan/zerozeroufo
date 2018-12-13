@@ -253,7 +253,7 @@ void orient(void *p)
             orientation = 1;
         }
         send_orientation(orientation);
-        vTaskDelay(50);
+        vTaskDelay(80);
     }
 }
 
@@ -263,6 +263,6 @@ void wireless_transmit(void *p)
 
     while (1) {
         wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &accel_orientation, sizeof(accel_orientation), 0);
-        vTaskDelay(50);
+        vTaskDelay(80);
     }
 }

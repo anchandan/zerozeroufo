@@ -90,6 +90,7 @@ int main(void)
     xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
     xTaskCreate(receive_message, "receive messages", 256, NULL, PRIORITY_CRITICAL /* TODO */, NULL);
 #else
+    srand(time(0));
     xTaskCreate(RGB_BoomScreen,"RGB_BoomScreen",256,NULL,PRIORITY_HIGH,&BoomScreenHandle);
     vTaskSuspend(BoomScreenHandle);
     xTaskCreate(start_screen, "start", 256, NULL,PRIORITY_HIGH,&start_h);

@@ -2,7 +2,6 @@
  * console.hpp
  *
  *  Created on: Dec 1, 2018
- *      Author: ollie
  */
 
 #ifndef CONSOLE_HPP_
@@ -59,6 +58,25 @@ extern TaskHandle_t gameplay_h;
 extern TaskHandle_t start_h;
 extern TaskHandle_t BoomScreenHandle;
 #endif
+
+class Obstacle
+{
+private:
+    uint16_t x, y, w, h, c;
+    uint32_t speed;
+    uint16_t obstacle_colours[7] = { GRAY, MAGENTA, RED, GREEN, CYAN, BLUE, PINK };
+
+    uint16_t setColour();
+public:
+    Obstacle();
+    ~Obstacle();
+
+    void init();
+    void draw();
+    void erase();
+    void shift();
+    uint16_t pos();
+};
 
 
 #endif /* CONSOLE_HPP_ */
