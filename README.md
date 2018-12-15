@@ -17,9 +17,10 @@ These masks can be set/unset in `sys_config.h`.
 
 ## TODO
 
-- duplicate code in RGB, GFX
+- duplicate code in GFX
 - obstacle speeds
 - obstacle shapes
 - coins
 - power ups
 - tunnel
+- isr -> task performance

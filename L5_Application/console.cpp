@@ -131,11 +131,11 @@ void Draw_UFO(uint8_t x, uint8_t y)
 
 }
 
-bool draw_ufo_collision(uint8_t x, uint8_t y)
+bool ufo_draw_collision(uint8_t x, uint8_t y)
 {
     bool collision = false;
 
-    collision = rgb.drawPixelCollision(x,y,VIOLET) || collision;
+    collision = rgb.drawPixel(x,y,VIOLET) || collision;
     collision = rgb.drawLineCollision(x-1,y+1,x+1,y+1,VIOLET) || collision;
     collision = rgb.drawLineCollision(x-3,y+2,x+3,y+2,VIOLET) || collision;
 
@@ -283,7 +283,7 @@ void gameplay(void *p)
         rgb.drawObstacle(x3,y3+35,2,height3,BLUE);
         o1.draw();
 #if 1
-        ozhu = draw_ufo_collision(x, y);
+        ozhu = ufo_draw_collision(x, y);
 #else
         Draw_UFO(x, y);
 #endif

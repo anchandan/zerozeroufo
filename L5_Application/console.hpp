@@ -59,6 +59,9 @@ extern TaskHandle_t start_h;
 extern TaskHandle_t BoomScreenHandle;
 #endif
 
+/*  */
+const uint32_t MAX_SPEED = 3;
+
 class Obstacle
 {
 private:
