@@ -83,21 +83,16 @@ int main(void)
     rgb.init(32, 19, 20, 22, 23, 28, 6, 29, 7, true, 64);
     rgb.begin();
 
-#if 0
     //xTaskCreate(update_display_task, "update display", 256, NULL, PRIORITY_HIGH, NULL);
-    xTaskCreate(start_screen, "title screen", 256, NULL, PRIORITY_LOW, NULL);
-    //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
-    xTaskCreate(Game_Screen, "Obstacle", 256, NULL, PRIORITY_LOW, NULL);
-    xTaskCreate(receive_message, "receive messages", 256, NULL, PRIORITY_CRITICAL /* TODO */, NULL);
-#else
+
+    srand(time(0));
     xTaskCreate(RGB_BoomScreen,"RGB_BoomScreen",256,NULL,PRIORITY_HIGH,&BoomScreenHandle);
     vTaskSuspend(BoomScreenHandle);
-    xTaskCreate(start_screen, "start", 256, NULL,PRIORITY_HIGH,&start_h);
+    xTaskCreate(start_screen, "start", 256, NULL, PRIORITY_HIGH, &start_h);
     //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
     //xTaskCreate(gameplay, "Game_Screen", 256, NULL, PRIORITY_LOW, NULL);
     xTaskCreate(receive_message, "recv", 256, NULL, PRIORITY_HIGH, NULL);
     //xTaskCreate(Pixel_Test,"Pixel_Test",256, NULL, PRIORITY_HIGH, NULL);
-#endif
 #endif /* ZZU_CONSOLE */
 
     scheduler_start(); ///< This shouldn't return

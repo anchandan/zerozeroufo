@@ -12,6 +12,12 @@ TaskHandle_t gameplay_h;
 TaskHandle_t start_h;
 TaskHandle_t BoomScreenHandle;
 
+#if 0 /* NOTE could implement obstacle generation with ring array(s) */
+Obstacle obstacle_ring[MAX_OBSTACLES];
+uint32_t or_head = 0, or_tail = 0, or_count = 0;
+#endif
+uint32_t gameplay_timers[MAX_SPEED] = { 0 };
+
 void timer0_ISR(void)
 {
 #if 0
@@ -79,22 +85,22 @@ void receive_message(void *p)
 
             if (accel_value == 100) {
                 if (game_session == 0) {
-                    u0_dbg_printf("in game session == 0 \n");
+                    //u0_dbg_printf("in game session == 0 \n");
                     game_session = 2;
                     vTaskSuspend(start_h);
-                    xTaskCreate(gameplay, "gameplay", 1024, NULL, PRIORITY_MEDIUM, &gameplay_h);
+                    xTaskCreate(gameplay, "gameplay", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
                 } else if(game_session == 1) {
-                    u0_dbg_printf("in game session == 1 \n");
+                    //u0_dbg_printf("in game session == 1 \n");
                     game_session = 2;
 
                     rgb.fillScreen(BLACK);
                     boom_flag = true;
-                    xTaskCreate(gameplay,"gameplay",1024,NULL,PRIORITY_MEDIUM,&gameplay_h);
+                    xTaskCreate(gameplay, "gameplay", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
                     //vTaskResume(gameplay_h);
                     vTaskSuspend(BoomScreenHandle);
                     vTaskSuspend(start_h);
                 } else if (game_session == 2) {
-                    u0_dbg_printf("in game session == 2 \n");
+                    //u0_dbg_printf("in game session == 2 \n");
                     game_session = 1;
                     vTaskDelete(gameplay_h);
                     rgb.fillScreen(BLACK);
@@ -244,65 +250,72 @@ void RGB_BoomScreen(void *p)
     }
 }
 
+uint32_t get_rand(uint32_t mod, uint32_t off)
+{
+    return (rand() % mod) + off;
+}
+
+void game_tick()
+{
+    uint32_t mod, time;
+
+    for (uint32_t i = 0; i < MAX_SPEED; i++) {
+        mod = 1 << (MAX_SPEED - i - 1);
+        time = gameplay_timers[i];
+        gameplay_timers[i] = (time + 1) % mod;
+    }
+}
+
 void gameplay(void *p)
 {
     uint32_t accel_value;
+    bool collision_flag;
+
     rgb.fillScreen(BLACK);
-    //srand(time(0));
-    const uint32_t MAX_SPEED = 5;
 
-    int x = 5, y = 30;//,co=0;
+    int x = 5, y = 30;
     uint32_t orientationQ_Buffer=0;
-    int x1=64, y1, height1=5;
-    int x2=74, y2, height2=6;
-    int x3=104, y3, height3=3;
+    int x3 = 104, y3 = get_rand(5, 5), height3 = 3;
     Obstacle o1 = Obstacle();
+    Obstacle o2 = Obstacle();
+    Obstacle o3 = Obstacle();
+    Obstacle o4 = Obstacle();
 
-    //Draw_UFO(5,25);
-    y1= rand()%15+3;
-    y2= rand()%32+3;
-    y3= rand()%5+5;
+    while (1) {
+        /* border/tunnel */
+        rgb.drawFastHLine(0,0,64,WHITE);
+        rgb.drawFastHLine(0,1,64,WHITE);
+        rgb.drawFastHLine(0,62,64,WHITE);
+        rgb.drawFastHLine(0,63,64,WHITE);
 
-    //Border
-    rgb.drawFastHLine(0,0,64,WHITE);
-    rgb.drawFastHLine(0,1,64,WHITE);
-    rgb.drawFastHLine(0,62,64,WHITE);
-    rgb.drawFastHLine(0,63,64,WHITE);
-
-    //Clear_UFO(x,y);//ozhu
-    while (x1 > 0 && x2 > 0 && x3 > 0) {
-        bool ozhu;
         score++;
-        //Draw_UFO(x, y);//ozhu TODO
-        Clear_UFO(x, y);//ozhu
+        //Clear_UFO(x, y);//ozhu
         //moving the obstacles
-        rgb.drawObstacle(x1,y1,3,height1,RED);
-        //rgb.drawObstacle(x1,y1+20,3,height1+5,RED);
-        rgb.drawObstacle(x2,y2,3,height2,GREEN);
-        rgb.drawObstacle(x3,y3,2,height3,BLUE);
-        rgb.drawObstacle(x3,y3+35,2,height3,BLUE);
+        rgb.drawObstacle(x3,y3,2,height3,BLUE, true);
+        rgb.drawObstacle(x3,y3+35,2,height3,BLUE, true);
         o1.draw();
-#if 1
-        ozhu = ufo_draw_collision(x, y);
-#else
-        Draw_UFO(x, y);
-#endif
+        o2.draw();
+        o3.draw();
+        o4.draw();
+
+        collision_flag = ufo_draw_collision(x, y);
 
         /* game tick */
         vTaskDelay(20);
+        game_tick();
 
         /* erase obstacle */
-        rgb.drawObstacle(x1,y1,3,height1,BLACK);
-        //rgbobj.drawObstacle(x1,y1+20,3,height1+5,BLACK);
-        rgb.drawObstacle(x2,y2,3,height2,BLACK);
-        rgb.drawObstacle(x3,y3,2,height3,BLACK);
-        rgb.drawObstacle(x3,y3+35,2,height3,BLACK);
+        rgb.drawObstacle(x3,y3,2,height3,BLACK, true);
+        rgb.drawObstacle(x3,y3+35,2,height3,BLACK, true);
         o1.erase();
+        o2.erase();
+        o3.erase();
+        o4.erase();
 
         Clear_UFO(x, y);//ozhu
 
         /* collision detection */
-        if (!boom_flag && ozhu) {
+        if (!boom_flag && collision_flag) {
             vTaskResume(BoomScreenHandle);
             boom_flag = true;
             vTaskDelay(10);
@@ -313,7 +326,6 @@ void gameplay(void *p)
 
         xQueueReceive(orientation_q, &orientationQ_Buffer, 5);
         accel_value = orientationQ_Buffer;
-          //printf("accel_value: %lu, \t co: %d\n ",accel_value,co++);
 
         if (accel_value==0) {
             y++ ;
@@ -326,100 +338,105 @@ void gameplay(void *p)
             y=3;
         }
 
-        x1--;
-        x2--;
-        x3--;
-        o1.shift();
+        /* move obstacles */
+        if (gameplay_timers[0] == 0) {
+            x3--;
+            if (o1.isSlow()) o1.shift();
+            if (o2.isSlow()) o2.shift();
+            if (o3.isSlow()) o3.shift();
+            if (o4.isSlow()) o4.shift();
+        }
+        if (gameplay_timers[1] == 0) {
+            if (o1.isMed()) o1.shift();
+            if (o2.isMed()) o2.shift();
+            if (o3.isMed()) o3.shift();
+            if (o4.isMed()) o4.shift();
+        }
+        if (gameplay_timers[2] == 0) {
+            if (o1.isFast()) o1.shift();
+            if (o2.isFast()) o2.shift();
+            if (o3.isFast()) o3.shift();
+            if (o4.isFast()) o4.shift();
+        }
 
-        if(x1==0) {
-            x1=64;
-            y1= rand()%32+3;
-            height1= rand()%15+5;
-        }
-        if(x2==0) {
-            x2=64;
-            y2= rand()%32+3;
-            height2= rand()%15+5;
-        }
-        if(x3==0) {
+        /* recover obstacles */
+        if (x3==0) {
             x3=64;
-            y3= rand()%5+5;
-            height3= rand()%5+7;
+            y3= get_rand(5, 5);
+            height3= get_rand(5, 7);
         }
-        if (o1.pos() <= 0) {
-            o1.init();
-        }
-    }
-}
 
+        if (o1.pos() <= 0) o1.init();
+        if (o2.pos() <= 0) o2.init();
+        if (o3.pos() <= 0) o3.init();
+        if (o4.pos() <= 0) o4.init();
 
-void Pixel_Test (void*pv)
-{
-    //int x=0;
-    int y=0;
-    while (1) {
-
-/*        rgbobj.drawFastHLine(0,30,64,RED);
-        delay_ms(3000);
-        rgbobj.drawFastHLine(0,31,64,GREEN);
-        delay_ms(500);
-        rgbobj.drawFastHLine(0,32,64,BLUE);
-        delay_ms(500);
-        rgbobj.drawFastHLine(0,33,66,WHITE);
-        delay_ms(500);*/
-
-        rgb.drawFastHLine(1,y,63,RED);
-        delay_ms(500);
-        y++;
     }
 }
 
 Obstacle::Obstacle()
 {
-    srand(time(0));
-    x = 63;
-    //y = (rand() % 64);
-    y = (rand() % 56) + 4;
-    w = (rand() % 4) + 2;
-    h = 1;
-    //h = (rand() % 3) + 2;
-    c = setColour();
-    speed = 0;
+    init();
+}
 
-    if (score > 2048) {
-        speed += 2;
-    } else if (score > 1024) {
-        speed += 1;
+void Obstacle::setShape()
+{
+    uint32_t i = get_rand(4, 0);
+
+    shape = rectangle;
+    if (i == 0) {
+        shape = circle;
     }
 }
 
-uint16_t Obstacle::setColour()
+void Obstacle::setColour()
 {
-    uint32_t i = rand() % 7;
+    uint32_t i = get_rand(6, 0);
 
-    return obstacle_colours[4];
-    //return obstacle_colours[i];
+    c = obstacle_colours[i];
+}
+
+void Obstacle::setSpeed()
+{
+    uint32_t s = get_rand(64, 0), s2 = 0, s1 = 4;
+
+    if (score > 2048) {
+        s2 = 31;
+        s1 = 63;
+    } else {
+        s2 = 31 * score / 2048;
+        s1 = 63 * score / 2048;
+    }
+
+    if (s <= s2) {
+        speed = fast;
+    } else if (s <= s1) {
+        speed = medium;
+    } else {
+        speed = slow;
+    }
 }
 
 void Obstacle::init()
 {
-    srand(time(0));
-    x = 63;
-    y = 62;
-    w = (rand() % 4) + 2;
-    h = 2;
-    c = setColour();
-    speed = 0;
+    //x = 63;
+    x = get_rand(16, 63);
+    y = get_rand(60, 2);
+    w = get_rand(4, 2);
+    h = get_rand(7, 1);
+    setShape();
+    setColour();
+    setSpeed();
 }
 
 void Obstacle::draw()
 {
-    rgb.drawObstacle(x, y, w, h, c);
+    rgb.drawObstacle(x, y, w, h, c, (shape == rectangle));
 }
 
 void Obstacle::erase()
 {
-    rgb.drawObstacle(x, y, w, h, BLACK);
+    rgb.drawObstacle(x, y, w, h, BLACK, (shape == rectangle));
 }
 
 void Obstacle::shift()
@@ -431,3 +448,19 @@ uint16_t Obstacle::pos()
 {
     return x;
 }
+
+bool Obstacle::isSlow()
+{
+    return (speed == slow);
+}
+
+bool Obstacle::isMed()
+{
+    return (speed == medium);
+}
+
+bool Obstacle::isFast()
+{
+    return (speed == fast);
+}
+

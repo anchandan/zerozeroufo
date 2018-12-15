@@ -60,6 +60,7 @@ extern TaskHandle_t BoomScreenHandle;
 #endif
 
 /*  */
+const uint32_t MAX_OBSTACLES = 5;
 const uint32_t MAX_SPEED = 3;
 
 class Obstacle
@@ -67,18 +68,33 @@ class Obstacle
 private:
     uint16_t x, y, w, h, c;
     uint32_t speed;
-    uint16_t obstacle_colours[7] = { GRAY, MAGENTA, RED, GREEN, CYAN, BLUE, PINK };
+    uint16_t obstacle_colours[6] = { GRAY, MAGENTA, RED, GREEN, CYAN, BLUE };
 
-    uint16_t setColour();
+    enum Shape {
+        rectangle,
+        circle
+    };
+    Shape shape;
+    enum Speed {
+        slow,
+        medium,
+        fast
+    };
+    void setShape();
+    void setColour();
+    void setSpeed();
 public:
     Obstacle();
-    ~Obstacle();
+    ~Obstacle() { ; };
 
     void init();
     void draw();
     void erase();
     void shift();
     uint16_t pos();
+    bool isSlow();
+    bool isMed();
+    bool isFast();
 };
 
 

@@ -110,9 +110,13 @@ void RGB::begin(void) {
     LPC_TIM0->TCR |= 1 << 0; // Start timer
 }
 
-void RGB::drawObstacle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colour)
+void RGB::drawObstacle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t colour, bool isRectangle)
 {
-    GFX::fillRect(x,y,w,h,colour);
+    if (isRectangle) {
+        GFX::fillRect(x, y, w, h, colour);
+    } else {
+        GFX::drawCircle(x, y, w, colour);
+    }
 }
 
 bool RGB::drawPixel(uint16_t x, uint16_t y, uint16_t c)
@@ -156,7 +160,7 @@ bool RGB::drawPixel(uint16_t x, uint16_t y, uint16_t c)
     coloradder = &colorbuffer[base_addr];
     /**
      * collision detection included in generic drawPixel()
-     * (note: adding extra assignment faster than separate function call, prevents duplicate code)
+     * (NOTE adding extra assignment faster than separate function call, prevents duplicate code)
      */
     collision = (*coloradder & rgb_mask) != 0;
     *coloradder &= ~rgb_mask;            // Mask out R,G,B in one op
