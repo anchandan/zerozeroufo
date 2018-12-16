@@ -11,6 +11,7 @@ bool boom_flag = false;
 TaskHandle_t gameplay_h;
 TaskHandle_t start_h;
 TaskHandle_t BoomScreenHandle;
+uint16_t x_c, y_c;
 
 #if 0 /* NOTE could implement obstacle generation with ring array(s) */
 Obstacle obstacle_ring[MAX_OBSTACLES];
@@ -140,10 +141,16 @@ void Draw_UFO(uint8_t x, uint8_t y)
 bool ufo_draw_collision(uint8_t x, uint8_t y)
 {
     bool collision = false;
+    //uint16_t x_c, y_c;
 
-    collision = rgb.drawPixel(x,y,VIOLET) || collision;
-    collision = rgb.drawLineCollision(x-1,y+1,x+1,y+1,VIOLET) || collision;
-    collision = rgb.drawLineCollision(x-3,y+2,x+3,y+2,VIOLET) || collision;
+    //collision = rgb.drawPixel(x, y, VIOLET) || collision;
+    if (rgb.drawPixel(x, y, VIOLET)) {
+        x_c = x;
+        y_c = y;
+        collision = true;
+    }
+    collision = rgb.drawLineCollision(x-1, y+1, x+1, y+1, VIOLET, &x_c, &y_c) || collision;
+    collision = rgb.drawLineCollision(x-3, y+2, x+3, y+2, VIOLET, &x_c, &y_c) || collision;
 
     return collision;
 }
@@ -269,17 +276,22 @@ void game_tick()
 void gameplay(void *p)
 {
     uint32_t accel_value;
-    bool collision_flag;
+    bool collision_flag = false, token_flag = false;
 
     rgb.fillScreen(BLACK);
 
+    /* initialize map objects */
+    /* TODO handle logic more regularly */
     int x = 5, y = 30;
     uint32_t orientationQ_Buffer=0;
     int x3 = 104, y3 = get_rand(5, 5), height3 = 3;
-    Obstacle o1 = Obstacle();
-    Obstacle o2 = Obstacle();
-    Obstacle o3 = Obstacle();
-    Obstacle o4 = Obstacle();
+    Obstacle ob1 = Obstacle();
+    Obstacle ob2 = Obstacle();
+    Obstacle ob3 = Obstacle();
+    Obstacle ob4 = Obstacle();
+    Coin coin1 = Coin();
+    Coin coin2 = Coin();
+    Coin coin3 = Coin();
 
     while (1) {
         /* border/tunnel */
@@ -288,15 +300,16 @@ void gameplay(void *p)
         rgb.drawFastHLine(0,62,64,WHITE);
         rgb.drawFastHLine(0,63,64,WHITE);
 
-        score++;
-        //Clear_UFO(x, y);//ozhu
-        //moving the obstacles
+        /* draw obstacles */
         rgb.drawObstacle(x3,y3,2,height3,BLUE, true);
         rgb.drawObstacle(x3,y3+35,2,height3,BLUE, true);
-        o1.draw();
-        o2.draw();
-        o3.draw();
-        o4.draw();
+        ob1.draw();
+        ob2.draw();
+        ob3.draw();
+        ob4.draw();
+        coin1.draw();
+        coin2.draw();
+        coin3.draw();
 
         collision_flag = ufo_draw_collision(x, y);
 
@@ -304,25 +317,47 @@ void gameplay(void *p)
         vTaskDelay(20);
         game_tick();
 
-        /* erase obstacle */
+        /* clear objects for next tick */
         rgb.drawObstacle(x3,y3,2,height3,BLACK, true);
         rgb.drawObstacle(x3,y3+35,2,height3,BLACK, true);
-        o1.erase();
-        o2.erase();
-        o3.erase();
-        o4.erase();
+        ob1.erase();
+        ob2.erase();
+        ob3.erase();
+        ob4.erase();
+        coin1.erase();
+        coin2.erase();
+        coin3.erase();
 
-        Clear_UFO(x, y);//ozhu
+        Clear_UFO(x, y);
 
         /* collision detection */
         if (!boom_flag && collision_flag) {
-            vTaskResume(BoomScreenHandle);
-            boom_flag = true;
-            vTaskDelay(10);
-            vTaskSuspend(gameplay_h);
-            boom_flag = true;
+            if (coin1.collide(x_c, y_c)) {
+                coin1.init();
+                score++;
+                token_flag = true;
+            }
+            if (coin2.collide(x_c, y_c)) {
+                coin2.init();
+                score++;
+                token_flag = true;
+            }
+            if (coin3.collide(x_c, y_c)) {
+                coin3.init();
+                score++;
+                token_flag = true;
+            }
+            if (!token_flag) {
+                vTaskResume(BoomScreenHandle);
+                boom_flag = true;
+                vTaskDelay(10);
+                vTaskSuspend(gameplay_h);
+                boom_flag = true;
+            }
         }
         boom_flag = false;
+        collision_flag = false;
+        token_flag = false;
 
         xQueueReceive(orientation_q, &orientationQ_Buffer, 5);
         accel_value = orientationQ_Buffer;
@@ -341,22 +376,25 @@ void gameplay(void *p)
         /* move obstacles */
         if (gameplay_timers[0] == 0) {
             x3--;
-            if (o1.isSlow()) o1.shift();
-            if (o2.isSlow()) o2.shift();
-            if (o3.isSlow()) o3.shift();
-            if (o4.isSlow()) o4.shift();
+            if (ob1.isSlow()) ob1.shift();
+            if (ob2.isSlow()) ob2.shift();
+            if (ob3.isSlow()) ob3.shift();
+            if (ob4.isSlow()) ob4.shift();
+            coin1.shift();
+            coin2.shift();
+            coin3.shift();
         }
         if (gameplay_timers[1] == 0) {
-            if (o1.isMed()) o1.shift();
-            if (o2.isMed()) o2.shift();
-            if (o3.isMed()) o3.shift();
-            if (o4.isMed()) o4.shift();
+            if (ob1.isMed()) ob1.shift();
+            if (ob2.isMed()) ob2.shift();
+            if (ob3.isMed()) ob3.shift();
+            if (ob4.isMed()) ob4.shift();
         }
         if (gameplay_timers[2] == 0) {
-            if (o1.isFast()) o1.shift();
-            if (o2.isFast()) o2.shift();
-            if (o3.isFast()) o3.shift();
-            if (o4.isFast()) o4.shift();
+            if (ob1.isFast()) ob1.shift();
+            if (ob2.isFast()) ob2.shift();
+            if (ob3.isFast()) ob3.shift();
+            if (ob4.isFast()) ob4.shift();
         }
 
         /* recover obstacles */
@@ -366,10 +404,13 @@ void gameplay(void *p)
             height3= get_rand(5, 7);
         }
 
-        if (o1.pos() <= 0) o1.init();
-        if (o2.pos() <= 0) o2.init();
-        if (o3.pos() <= 0) o3.init();
-        if (o4.pos() <= 0) o4.init();
+        if (ob1.done()) ob1.init();
+        if (ob2.done()) ob2.init();
+        if (ob3.done()) ob3.init();
+        if (ob4.done()) ob4.init();
+        if (coin1.done()) coin1.init();
+        if (coin2.done()) coin2.init();
+        if (coin3.done()) coin3.init();
 
     }
 }
@@ -391,7 +432,7 @@ void Obstacle::setShape()
 
 void Obstacle::setColour()
 {
-    uint32_t i = get_rand(6, 0);
+    uint32_t i = get_rand(sizeof(obstacle_colours) / sizeof(uint16_t), 0);
 
     c = obstacle_colours[i];
 }
@@ -400,7 +441,7 @@ void Obstacle::setSpeed()
 {
     uint32_t s = get_rand(64, 0), s2 = 0, s1 = 4;
 
-    if (score > 2048) {
+    if (score > 64) {
         s2 = 31;
         s1 = 63;
     } else {
@@ -419,7 +460,6 @@ void Obstacle::setSpeed()
 
 void Obstacle::init()
 {
-    //x = 63;
     x = get_rand(16, 63);
     y = get_rand(60, 2);
     w = get_rand(4, 2);
@@ -444,9 +484,9 @@ void Obstacle::shift()
     x--;
 }
 
-uint16_t Obstacle::pos()
+bool Obstacle::done()
 {
-    return x;
+    return (x <= 0);
 }
 
 bool Obstacle::isSlow()
@@ -464,3 +504,40 @@ bool Obstacle::isFast()
     return (speed == fast);
 }
 
+#if 1
+Coin::Coin()
+{
+    init();
+}
+
+void Coin::init()
+{
+    x = get_rand(64, 64);
+    y = get_rand(60, 2);
+}
+
+void Coin::draw()
+{
+    rgb.drawPixel(x, y, GOLD);
+}
+
+void Coin::erase()
+{
+    rgb.drawPixel(x, y, BLACK);
+}
+
+void Coin::shift()
+{
+    x--;
+}
+
+bool Coin::done()
+{
+    return (x <= 0);
+}
+
+bool Coin::collide(uint16_t x_collide, uint16_t y_collide)
+{
+    return (x == x_collide) && (y == y_collide);
+}
+#endif

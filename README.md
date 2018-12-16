@@ -17,8 +17,9 @@ These masks can be set/unset in `sys_config.h`.
 
 ## TODO
 
-- duplicate code in GFX
-- coins
 - power ups
 - tunnel
+- y-axis UFO speed
 - isr -> task performance
+- duplicate code in GFX
+- duplicate code in Obstacle, Coin, Life

@@ -26,15 +26,14 @@ class GFX  {
   GFX(uint16_t w, uint16_t h);
  // virtual ~GFX();
 
-  virtual void drawPixel(uint16_t x, uint16_t y, uint16_t color) = 0;
+  virtual bool drawPixel(uint16_t x, uint16_t y, uint16_t color) = 0;
   virtual void
     drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color),
     drawFastVLine(uint16_t x, uint16_t y, uint16_t h, uint16_t color),
     drawFastHLine(uint16_t x, uint16_t y, uint16_t w, uint16_t color),
     fillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color),
     fillScreen(uint16_t color);
-  virtual bool drawPixelCollision(uint16_t x, uint16_t y, uint16_t color) = 0;
-  bool drawLineCollision(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
+  bool drawLineCollision(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color, uint16_t *x_c, uint16_t *y_c);
 
   void
 

@@ -29,8 +29,8 @@ GFX::GFX(uint16_t w, uint16_t h):
   wrap      = true;
 }
 
-void GFX::drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color) {
-
+void GFX::drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color)
+{
     uint16_t steep =  abs(y1 - y0) > abs(x1 - x0);
   if (steep) {
     swap(x0, y0);
@@ -69,59 +69,58 @@ void GFX::drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t 
   }
 }
 
-#if 1
-bool GFX::drawLineCollision(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color) {
+/* TODO duplicate code */
+bool GFX::drawLineCollision(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color, uint16_t *x_c, uint16_t *y_c)
+{
 
-    bool collision = false;
+    bool collision = false, collision_tmp = false;
     uint16_t steep =  abs(y1 - y0) > abs(x1 - x0);
-  if (steep) {
-    swap(x0, y0);
-    swap(x1, y1);
-  }
 
-  if (x0 > x1) {
-    swap(x0, x1);
-    swap(y0, y1);
-  }
-
-  uint16_t dx, dy;
-  dx = x1 - x0;
-  dy = abs(y1 - y0);
-
-  uint16_t err = dx / 2;
-  uint16_t ystep;
-
-  if (y0 < y1) {
-    ystep = 1;
-  } else {
-    ystep = -1;
-  }
-
-  for (; x0<=x1; x0++) {
     if (steep) {
-#if 0
-      if (drawPixelCollision(y0, x0, color)) {
-          collision = true;
-      }
-#endif
-      collision = drawPixelCollision(y0, x0, color) || collision;
+        swap(x0, y0);
+        swap(x1, y1);
+    }
+    if (x0 > x1) {
+        swap(x0, x1);
+        swap(y0, y1);
+    }
+
+    uint16_t dx, dy;
+    dx = x1 - x0;
+    dy = abs(y1 - y0);
+
+    uint16_t err = dx / 2;
+    uint16_t ystep;
+
+    if (y0 < y1) {
+        ystep = 1;
     } else {
-#if 0
-      if (drawPixelCollision(x0, y0, color)) {
-          collision = true;
-      }
-#endif
-      collision = drawPixelCollision(x0, y0, color) || collision;
+        ystep = -1;
     }
-    err -= dy;
-    if (err < 0) {
-      y0 += ystep;
-      err += dx;
+
+    for (; x0<=x1; x0++) {
+        if (steep) {
+            //collision = drawPixel(y0, x0, color) || collision;
+            if ((collision_tmp = drawPixel(y0, x0, color))) {
+                *x_c = y0;
+                *y_c = x0;
+            }
+        } else {
+            //collision = drawPixel(x0, y0, color) || collision;
+            if ((collision_tmp = drawPixel(x0, y0, color))) {
+                *x_c = x0;
+                *y_c = y0;
+            }
+        }
+        collision = collision_tmp || collision;
+        err -= dy;
+        if (err < 0) {
+            y0 += ystep;
+            err += dx;
+        }
     }
-  }
-  return collision;
+    return collision;
 }
-#endif//TODO duplicate code
 
 void GFX::drawFastVLine(uint16_t x, uint16_t y,uint16_t h, uint16_t color) {
   drawLine(x, y, x, y+h-1, color);

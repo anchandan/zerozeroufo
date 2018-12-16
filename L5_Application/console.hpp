@@ -26,8 +26,6 @@
 
 /* Colors */
 #define WHITE   0xFFFF
-#define GRAY    0x000F
-#define MAGENTA 0xF81F
 #define RED     0xF800
 #define GREEN   0x0202
 #define CYAN    0x01FF
@@ -35,8 +33,7 @@
 #define BLUE    0x85DD
 #define PINK    0xFF00
 #define BLACK   0x0000
-//#define YELLOW
-
+#define GOLD    0xF81F
 
 extern RGB rgb;
 extern SemaphoreHandle_t update_display_semphr;
@@ -63,26 +60,29 @@ extern TaskHandle_t BoomScreenHandle;
 const uint32_t MAX_OBSTACLES = 5;
 const uint32_t MAX_SPEED = 3;
 
+/* TODO better class hierarchy between different types of obstacles, coins, lifes */
 class Obstacle
 {
 private:
-    uint16_t x, y, w, h, c;
-    uint32_t speed;
-    uint16_t obstacle_colours[6] = { GRAY, MAGENTA, RED, GREEN, CYAN, BLUE };
-
+    uint16_t obstacle_colours[4] = { RED, GREEN, CYAN, BLUE };
     enum Shape {
         rectangle,
         circle
     };
-    Shape shape;
     enum Speed {
         slow,
         medium,
         fast
     };
+
+    uint16_t x, y, w, h, c;
+    uint32_t speed;
+    Shape shape;
+
     void setShape();
     void setColour();
     void setSpeed();
+
 public:
     Obstacle();
     ~Obstacle() { ; };
@@ -91,11 +91,44 @@ public:
     void draw();
     void erase();
     void shift();
-    uint16_t pos();
+    bool done();
     bool isSlow();
     bool isMed();
     bool isFast();
 };
 
+class Coin
+{
+private:
+    uint16_t x, y;
+
+public:
+    Coin();
+    ~Coin() { ; };
+
+    void init();
+    void draw();
+    void erase();
+    void shift();
+    bool done();
+    bool collide(uint16_t x_collide, uint16_t y_collide);
+};
+
+class Life
+{
+private:
+    uint16_t x, y;
+
+public:
+    Life();
+    ~Life() { ; };
+
+    void init();
+    void draw();
+    void erase();
+    void shift();
+    bool done();
+    bool collide(uint16_t x_collide, uint16_t y_collide);
+};
 
 #endif /* CONSOLE_HPP_ */
