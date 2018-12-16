@@ -78,6 +78,7 @@ int main(void)
     update_display_semphr = xSemaphoreCreateBinary();
     orientation_q = xQueueCreate(1, sizeof(uint32_t));
     control_q = xQueueCreate(1, sizeof(uint32_t));
+    score_q = xQueueCreate(1, sizeof(uint32_t));
 
     isr_register(TIMER0_IRQn, timer0_ISR);
     rgb.init(32, 19, 20, 22, 23, 28, 6, 29, 7, true, 64);
@@ -86,8 +87,7 @@ int main(void)
     //xTaskCreate(update_display_task, "update display", 256, NULL, PRIORITY_HIGH, NULL);
 
     srand(time(0));
-    xTaskCreate(RGB_BoomScreen,"RGB_BoomScreen",256,NULL,PRIORITY_HIGH,&BoomScreenHandle);
-    vTaskSuspend(BoomScreenHandle);
+    xTaskCreate(boom_score, "BOOM", 256, NULL, PRIORITY_LOW, NULL);
     xTaskCreate(start_screen, "start", 256, NULL, PRIORITY_HIGH, &start_h);
     //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
     //xTaskCreate(gameplay, "Game_Screen", 256, NULL, PRIORITY_LOW, NULL);

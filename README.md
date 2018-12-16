@@ -17,6 +17,7 @@ These masks can be set/unset in `sys_config.h`.
 
 ## TODO
 
+- display all score digits in boom
 - power ups
 - tunnel
 - y-axis UFO speed

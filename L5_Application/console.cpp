@@ -4,13 +4,12 @@ RGB rgb;
 SemaphoreHandle_t update_display_semphr;
 QueueHandle_t orientation_q;
 QueueHandle_t control_q;
+QueueHandle_t score_q;
 
 int x_Boom, y_Boom, x_UFO_top, y_UFO_top,x_UFO_bot,y_UFO_bot;
-int score=0;
 bool boom_flag = false;
 TaskHandle_t gameplay_h;
 TaskHandle_t start_h;
-TaskHandle_t BoomScreenHandle;
 uint16_t x_c, y_c;
 
 #if 0 /* NOTE could implement obstacle generation with ring array(s) */
@@ -89,16 +88,15 @@ void receive_message(void *p)
                     //u0_dbg_printf("in game session == 0 \n");
                     game_session = 2;
                     vTaskSuspend(start_h);
-                    xTaskCreate(gameplay, "gameplay", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
+                    xTaskCreate(gameplay, "game", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
                 } else if(game_session == 1) {
                     //u0_dbg_printf("in game session == 1 \n");
                     game_session = 2;
 
                     rgb.fillScreen(BLACK);
                     boom_flag = true;
-                    xTaskCreate(gameplay, "gameplay", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
+                    xTaskCreate(gameplay, "game", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
                     //vTaskResume(gameplay_h);
-                    vTaskSuspend(BoomScreenHandle);
                     vTaskSuspend(start_h);
                 } else if (game_session == 2) {
                     //u0_dbg_printf("in game session == 2 \n");
@@ -106,7 +104,6 @@ void receive_message(void *p)
                     vTaskDelete(gameplay_h);
                     rgb.fillScreen(BLACK);
                     vTaskResume(start_h);
-                    vTaskSuspend(BoomScreenHandle);
                 }
             }
         }
@@ -218,42 +215,42 @@ void start_screen(void *p)
     }
 }
 
-void RGB_BoomScreen(void *p)
+void boom_score(void *p)
 {
     char rem_Char[1];
     int x=60;
     int rem_Int;
-    rgb.fillScreen(BLACK);
+    uint32_t score;
 
     while (1) {
-        boom_flag = true;
-        rgb.drawChar(10,25,'B',RED,1,2);
-        rgb.drawChar(21,25,'O',RED,1,2);
-        rgb.drawChar(32,25,'O',RED,1,2);
-        rgb.drawChar(43,25,'M',RED,1,2);
-        rgb.drawChar(54,25,'!',RED,1,2);
-        u0_dbg_printf("---->score:------>%d\n", score);
+        if (xQueueReceive(score_q, &score, portMAX_DELAY)) {
+            rgb.fillScreen(BLACK);
+            boom_flag = true;
+            rgb.drawChar(10,25,'B',RED,1,2);
+            rgb.drawChar(21,25,'O',RED,1,2);
+            rgb.drawChar(32,25,'O',RED,1,2);
+            rgb.drawChar(43,25,'M',RED,1,2);
+            rgb.drawChar(54,25,'!',RED,1,2);
 
-        rgb.drawChar(6,45,'S',GREEN,1,1);
-        rgb.drawChar(12,45,'C',GREEN,1,1);
-        rgb.drawChar(18,45,'O',GREEN,1,1);
-        rgb.drawChar(24,45,'R',GREEN,1,1);
-        rgb.drawChar(30,45,'E',GREEN,1,1);
-        rgb.drawChar(34,45,':',GREEN,1,1);
+            rgb.drawChar(6,45,'S',GREEN,1,1);
+            rgb.drawChar(12,45,'C',GREEN,1,1);
+            rgb.drawChar(18,45,'O',GREEN,1,1);
+            rgb.drawChar(24,45,'R',GREEN,1,1);
+            rgb.drawChar(30,45,'E',GREEN,1,1);
+            rgb.drawChar(34,45,':',GREEN,1,1);
 
-        //HG: Code for displaying score
+            x=x-6;
+            rem_Int=score%10;
+            itoa(rem_Int,rem_Char,10);
 
-        x=x-6;
-        rem_Int=score%10;
-        itoa(rem_Int,rem_Char,10);
-
-        if(score>0)
-        {
-            rgb.drawChar(x,45,rem_Char[0],GREEN,1,1 );
+            if(score>0)
+            {
+                rgb.drawChar(x,45,rem_Char[0],GREEN,1,1 );
+            }
+            else
+                vTaskDelay(3000);
+            score=score/10;
         }
-        else
-            vTaskDelay(3000);
-        score=score/10;
     }
 }
 
@@ -276,6 +273,7 @@ void game_tick()
 void gameplay(void *p)
 {
     uint32_t accel_value;
+    uint32_t score;
     bool collision_flag = false, token_flag = false;
 
     rgb.fillScreen(BLACK);
@@ -348,7 +346,7 @@ void gameplay(void *p)
                 token_flag = true;
             }
             if (!token_flag) {
-                vTaskResume(BoomScreenHandle);
+                xQueueSend(score_q, &score, 0);
                 boom_flag = true;
                 vTaskDelay(10);
                 vTaskSuspend(gameplay_h);
@@ -437,7 +435,7 @@ void Obstacle::setColour()
     c = obstacle_colours[i];
 }
 
-void Obstacle::setSpeed()
+void Obstacle::setSpeed(uint32_t score)
 {
     uint32_t s = get_rand(64, 0), s2 = 0, s1 = 4;
 
@@ -445,8 +443,8 @@ void Obstacle::setSpeed()
         s2 = 31;
         s1 = 63;
     } else {
-        s2 = 31 * score / 2048;
-        s1 = 63 * score / 2048;
+        s2 = 31 * score / 64;
+        s1 = 63 * score / 64;
     }
 
     if (s <= s2) {
@@ -466,7 +464,18 @@ void Obstacle::init()
     h = get_rand(7, 1);
     setShape();
     setColour();
-    setSpeed();
+    setSpeed(0);
+}
+
+void Obstacle::init(uint32_t score)
+{
+    x = get_rand(16, 63);
+    y = get_rand(60, 2);
+    w = get_rand(4, 2);
+    h = get_rand(7, 1);
+    setShape();
+    setColour();
+    setSpeed(score);
 }
 
 void Obstacle::draw()

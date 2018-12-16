@@ -39,24 +39,18 @@ extern RGB rgb;
 extern SemaphoreHandle_t update_display_semphr;
 extern QueueHandle_t orientation_q;
 extern QueueHandle_t control_q;
-
+extern QueueHandle_t score_q;
 
 void timer0_ISR(void);
 void update_display_task(void *p);
 void receive_message(void *p);
 void start_screen(void *p);
-void console(void *p);
-
-#if 1
-void RGB_BoomScreen(void *p);
+void boom_score(void *p);
 void gameplay(void *p);
 
 extern TaskHandle_t gameplay_h;
 extern TaskHandle_t start_h;
-extern TaskHandle_t BoomScreenHandle;
-#endif
 
-/*  */
 const uint32_t MAX_OBSTACLES = 5;
 const uint32_t MAX_SPEED = 3;
 
@@ -81,13 +75,14 @@ private:
 
     void setShape();
     void setColour();
-    void setSpeed();
+    void setSpeed(uint32_t score);
 
 public:
     Obstacle();
     ~Obstacle() { ; };
 
     void init();
+    void init(uint32_t score);
     void draw();
     void erase();
     void shift();
