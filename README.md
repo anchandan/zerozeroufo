@@ -4,10 +4,10 @@ CMPE 244 Fall 2018: [Zero Zero Ufo](http://socialledge.com/sjsu/index.php/F18:_Z
 
 ## Team
 
-- Pooja Mahendra Baviskar ()
-- Aman Chandan ()
-- Himanshu Gunjal ()
-- Neel Patel ()
+- Pooja Mahendra Baviskar (012535393)
+- Aman Chandan (013720811)
+- Himanshu Gunjal (012483341)
+- Neel Patel (012468599)
 - Oliver Zhu (012485707)
 
 ## Compilation and installation
@@ -19,7 +19,7 @@ These masks can be set/unset in `sys_config.h`.
 
 - tunnel
 - y-axis UFO speed
+- evil UFO
 - isr -> task performance
 - duplicate code in GFX
 - duplicate code in Obstacle, Coin
-- evil UFO
