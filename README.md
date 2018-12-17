@@ -21,5 +21,5 @@ These masks can be set/unset in `sys_config.h`.
 - y-axis UFO speed
 - isr -> task performance
 - duplicate code in GFX
-- duplicate code in Obstacle, Coin, Life
+- duplicate code in Obstacle, Coin
 - evil UFO

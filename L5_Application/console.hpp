@@ -107,21 +107,4 @@ public:
     bool collide(uint16_t x_collide, uint16_t y_collide);
 };
 
-class Life
-{
-private:
-    uint16_t x, y;
-
-public:
-    Life();
-    ~Life() { ; };
-
-    void init();
-    void draw();
-    void erase();
-    void shift();
-    bool done();
-    bool collide(uint16_t x_collide, uint16_t y_collide);
-};
-
 #endif /* CONSOLE_HPP_ */
