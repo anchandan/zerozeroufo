@@ -21,8 +21,6 @@
 
 #include "messages.hpp"
 #include "semphr.h"
-//#include "acceleration_sensor.hpp"
-//#include "io.hpp"
 
 /* Colors */
 #define WHITE   0xFFFF

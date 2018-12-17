@@ -6,7 +6,7 @@ QueueHandle_t orientation_q;
 QueueHandle_t control_q;
 QueueHandle_t score_q;
 
-int x_Boom, y_Boom, x_UFO_top, y_UFO_top,x_UFO_bot,y_UFO_bot;
+int x_UFO_top, y_UFO_top, x_UFO_bot, y_UFO_bot;
 bool boom_flag = false;
 TaskHandle_t gameplay_h;
 TaskHandle_t start_h;
@@ -77,29 +77,23 @@ void receive_message(void *p)
 #else
         if (wireless_get_rx_pkt(&pkt, 80)) {
             wireless_deform_pkt(&pkt,1,&accel_value,sizeof(accel_value));
-        //         xQueueSend(orientation_q, &accel_value, 0);
 
-            if (game_session>=1) {
+            if (game_session >= 1) {
                 xQueueSend(orientation_q, &accel_value, 0);
             }
 
             if (accel_value == 100) {
                 if (game_session == 0) {
-                    //u0_dbg_printf("in game session == 0 \n");
                     game_session = 2;
                     vTaskSuspend(start_h);
                     xTaskCreate(gameplay, "game", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
                 } else if(game_session == 1) {
-                    //u0_dbg_printf("in game session == 1 \n");
                     game_session = 2;
-
                     rgb.fillScreen(BLACK);
                     boom_flag = true;
                     xTaskCreate(gameplay, "game", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
-                    //vTaskResume(gameplay_h);
                     vTaskSuspend(start_h);
                 } else if (game_session == 2) {
-                    //u0_dbg_printf("in game session == 2 \n");
                     game_session = 1;
                     vTaskDelete(gameplay_h);
                     rgb.fillScreen(BLACK);
@@ -217,39 +211,41 @@ void start_screen(void *p)
 
 void boom_score(void *p)
 {
-    char rem_Char[1];
-    int x=60;
-    int rem_Int;
     uint32_t score;
+    uint8_t d;
+    char c;
 
     while (1) {
         if (xQueueReceive(score_q, &score, portMAX_DELAY)) {
-            rgb.fillScreen(BLACK);
             boom_flag = true;
-            rgb.drawChar(10,25,'B',RED,1,2);
-            rgb.drawChar(21,25,'O',RED,1,2);
-            rgb.drawChar(32,25,'O',RED,1,2);
-            rgb.drawChar(43,25,'M',RED,1,2);
-            rgb.drawChar(54,25,'!',RED,1,2);
 
-            rgb.drawChar(6,45,'S',GREEN,1,1);
-            rgb.drawChar(12,45,'C',GREEN,1,1);
-            rgb.drawChar(18,45,'O',GREEN,1,1);
-            rgb.drawChar(24,45,'R',GREEN,1,1);
-            rgb.drawChar(30,45,'E',GREEN,1,1);
-            rgb.drawChar(34,45,':',GREEN,1,1);
+            rgb.fillScreen(BLACK);
 
-            x=x-6;
-            rem_Int=score%10;
-            itoa(rem_Int,rem_Char,10);
+            rgb.drawChar(7, 24, 'B', RED, 1, 2);
+            rgb.drawChar(18, 24, 'O', RED, 1, 2);
+            rgb.drawChar(29, 24, 'O', RED, 1, 2);
+            rgb.drawChar(40, 24, 'M', RED, 1, 2);
+            rgb.drawChar(51, 24, '!', RED, 1, 2);
 
-            if(score>0)
-            {
-                rgb.drawChar(x,45,rem_Char[0],GREEN,1,1 );
+            rgb.drawChar(6, 45, 'S', GREEN, 1, 1);
+            rgb.drawChar(12, 45, 'C', GREEN, 1, 1);
+            rgb.drawChar(18, 45, 'O', GREEN, 1, 1);
+            rgb.drawChar(24, 45, 'R', GREEN, 1, 1);
+            rgb.drawChar(30, 45, 'E', GREEN, 1, 1);
+            rgb.drawChar(34, 45, ':', GREEN, 1, 1);
+
+            score = (score >= 1000) ? 999 : score;
+            if (score == 0) {
+                rgb.drawChar(40, 45, '0', GREEN, 1, 1);
+                rgb.drawChar(50, 45, ':', GREEN, 1, 1);
+                rgb.drawChar(54, 45, '(', GREEN, 1, 1);
+                continue;
             }
-            else
-                vTaskDelay(3000);
-            score=score/10;
+            for (uint32_t x = 54; score > 0; x -= 7, score /= 10) {
+                d = score % 10;
+                c = '0' + d;
+                rgb.drawChar(x, 45, c, GREEN, 1, 1);
+            }
         }
     }
 }
@@ -273,7 +269,7 @@ void game_tick()
 void gameplay(void *p)
 {
     uint32_t accel_value;
-    uint32_t score;
+    uint32_t score = 0;
     bool collision_flag = false, token_flag = false;
 
     rgb.fillScreen(BLACK);
