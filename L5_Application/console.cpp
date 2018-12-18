@@ -391,10 +391,10 @@ void gameplay(void *p)
             height3= get_rand(5, 7);
         }
 
-        if (ob1.done()) ob1.init();
-        if (ob2.done()) ob2.init();
-        if (ob3.done()) ob3.init();
-        if (ob4.done()) ob4.init();
+        if (ob1.done()) ob1.init(score);
+        if (ob2.done()) ob2.init(score);
+        if (ob3.done()) ob3.init(score);
+        if (ob4.done()) ob4.init(score);
         if (coin1.done()) coin1.init();
         if (coin2.done()) coin2.init();
         if (coin3.done()) coin3.init();
@@ -426,17 +426,17 @@ void Obstacle::setColour()
 
 void Obstacle::setSpeed(uint32_t score)
 {
-    uint32_t s = get_rand(64, 0), s0 = 0, s1 = 4;
+    uint32_t s = get_rand(64, 0), s0, s1;
 
     if (score > 31) {
         s0 = 16;
         s1 = 32;
     } else {
-        s0 = score / 2;
+        s0 = score / 3;
         s1 = score;
     }
 
-    if (s <= s0) {
+    if (s <= s0 && s0 < s1) {
         speed = fast;
     } else if (s <= s1) {
         speed = medium;
@@ -447,7 +447,7 @@ void Obstacle::setSpeed(uint32_t score)
 
 void Obstacle::init()
 {
-    x = get_rand(16, 63);
+    x = get_rand(32, 63);
     y = get_rand(60, 2);
     w = get_rand(4, 2);
     h = get_rand(7, 1);

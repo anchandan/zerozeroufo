@@ -18,7 +18,6 @@ These masks can be set/unset in `sys_config.h`.
 ## TODO
 
 - tunnel
-- y-axis UFO speed
 - evil UFO
 - isr -> task performance
 - duplicate code in GFX
