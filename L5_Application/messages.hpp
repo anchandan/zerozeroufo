@@ -14,8 +14,19 @@
 
 
 /* Message opcodes */
-const uint32_t ZZU_DATA = 0;
-const uint32_t ZZU_CTRL = 1;
+const uint32_t ZZUM_MOVE = 0;
+const uint32_t ZZUM_CTRL = 100;
+
+/* Speeds */
+enum zzu_velocity {
+    df = 0,     /* down fast */
+    dm,         /* down medium, etc... */
+    ds,
+    no,         /* no move */
+    us,
+    um,
+    uf
+};
 
 
 #endif /* MESSAGES_HPP_ */

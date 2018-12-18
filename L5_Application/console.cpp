@@ -51,57 +51,42 @@ void update_display_task(void *p)
 void receive_message(void *p)
 {
     mesh_packet_t pkt;
-#if 0
-    uint32_t opcode;
     uint32_t data;
-#endif
-#if 1
-    uint32_t accel_value;
-    int game_session = 0;
-#endif
+    uint32_t game_state = ZZUS_INIT;
 
     while (1) {
-#if 0
-        if (wireless_get_rx_pkt(&pkt, 100)) {
-            wireless_deform_pkt(&pkt, 2,
-                    &opcode, sizeof(opcode),
-                    &data, sizeof(data));
-            if (opcode == ZZU_DATA) {
-                xQueueSend(orientation_q, &data, 0);
-            } else if (opcode == ZZU_CTRL) {
-                xQueueSend(control_q, &data, 0);
-            } else {
-                u0_dbg_printf("ERROR: invalid opcode %d\n", opcode);
-            }
-        }
-#else
         if (wireless_get_rx_pkt(&pkt, 80)) {
-            wireless_deform_pkt(&pkt,1,&accel_value,sizeof(accel_value));
+            wireless_deform_pkt(&pkt, 1, &data, sizeof(data));
 
-            if (game_session >= 1) {
-                xQueueSend(orientation_q, &accel_value, 0);
-            }
-
-            if (accel_value == 100) {
-                if (game_session == 0) {
-                    game_session = 2;
-                    vTaskSuspend(start_h);
-                    xTaskCreate(gameplay, "game", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
-                } else if(game_session == 1) {
-                    game_session = 2;
+            if (data != ZZUM_CTRL) {
+                if (game_state != ZZUS_INIT) {
+                    xQueueSend(orientation_q, &data, 0);
+                }
+            } else {
+                switch (game_state) {
+                case ZZUS_RESET:
+                    game_state = ZZUS_PLAY;
                     rgb.fillScreen(BLACK);
                     boom_flag = true;
                     xTaskCreate(gameplay, "game", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
                     vTaskSuspend(start_h);
-                } else if (game_session == 2) {
-                    game_session = 1;
+                    break;
+                case ZZUS_PLAY:
+                    game_state = ZZUS_RESET;
                     vTaskDelete(gameplay_h);
                     rgb.fillScreen(BLACK);
                     vTaskResume(start_h);
+                    break;
+                case ZZUS_INIT:
+                default:
+                    game_state = ZZUS_PLAY;
+                    vTaskSuspend(start_h);
+                    xTaskCreate(gameplay, "game", 2048, NULL, PRIORITY_MEDIUM, &gameplay_h);
+                    break;
                 }
             }
         }
-#endif
+
     }
 }
 
@@ -272,11 +257,10 @@ void gameplay(void *p)
     uint32_t score = 0;
     bool collision_flag = false, token_flag = false;
 
-    rgb.fillScreen(BLACK);
-
     /* initialize map objects */
     /* TODO handle logic more regularly */
-    int x = 5, y = 30;
+    uint32_t x = 5, y = 30;
+    zzu_velocity velocity;
     uint32_t orientationQ_Buffer=0;
     int x3 = 104, y3 = get_rand(5, 5), height3 = 3;
     Obstacle ob1 = Obstacle();
@@ -286,6 +270,8 @@ void gameplay(void *p)
     Coin coin1 = Coin();
     Coin coin2 = Coin();
     Coin coin3 = Coin();
+
+    rgb.fillScreen(BLACK);
 
     while (1) {
         /* border/tunnel */
@@ -354,21 +340,16 @@ void gameplay(void *p)
         token_flag = false;
 
         xQueueReceive(orientation_q, &orientationQ_Buffer, 5);
-        accel_value = orientationQ_Buffer;
+        velocity = (zzu_velocity)orientationQ_Buffer;
 
-        if (accel_value==0) {
-            y++ ;
-        } else if (accel_value==2) {
-            y--;
-        }
-        if (y>58) {
-            y=58;
-        } else if (y<3) {
-            y=3;
-        }
-
-        /* move obstacles */
+        /* move objects based on timers */
         if (gameplay_timers[0] == 0) {
+            if (velocity == us) {
+                y--;
+            } else if (velocity == ds) {
+                y++;
+            }
+
             x3--;
             if (ob1.isSlow()) ob1.shift();
             if (ob2.isSlow()) ob2.shift();
@@ -379,12 +360,24 @@ void gameplay(void *p)
             coin3.shift();
         }
         if (gameplay_timers[1] == 0) {
+            if (velocity == um) {
+                y--;
+            } else if (velocity == dm) {
+                y++;
+            }
+
             if (ob1.isMed()) ob1.shift();
             if (ob2.isMed()) ob2.shift();
             if (ob3.isMed()) ob3.shift();
             if (ob4.isMed()) ob4.shift();
         }
         if (gameplay_timers[2] == 0) {
+            if (velocity == uf) {
+                y--;
+            } else if (velocity == df) {
+                y++;
+            }
+
             if (ob1.isFast()) ob1.shift();
             if (ob2.isFast()) ob2.shift();
             if (ob3.isFast()) ob3.shift();
@@ -433,17 +426,17 @@ void Obstacle::setColour()
 
 void Obstacle::setSpeed(uint32_t score)
 {
-    uint32_t s = get_rand(64, 0), s2 = 0, s1 = 4;
+    uint32_t s = get_rand(64, 0), s0 = 0, s1 = 4;
 
-    if (score > 64) {
-        s2 = 31;
-        s1 = 63;
+    if (score > 31) {
+        s0 = 16;
+        s1 = 32;
     } else {
-        s2 = 31 * score / 64;
-        s1 = 63 * score / 64;
+        s0 = score / 2;
+        s1 = score;
     }
 
-    if (s <= s2) {
+    if (s <= s0) {
         speed = fast;
     } else if (s <= s1) {
         speed = medium;
@@ -509,7 +502,6 @@ bool Obstacle::isFast()
     return (speed == fast);
 }
 
-#if 1
 Coin::Coin()
 {
     init();
@@ -545,4 +537,3 @@ bool Coin::collide(uint16_t x_collide, uint16_t y_collide)
 {
     return (x == x_collide) && (y == y_collide);
 }
-#endif

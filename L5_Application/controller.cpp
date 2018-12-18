@@ -84,7 +84,7 @@ void button_detect_task(void *p)
 
             xQueueSend(toggle_led, &button0.pressed, (TickType_t)10);
             if (!button0.pressed) {
-                send_message(ZZU_CTRL, button0.__button);
+                send_message(ZZUM_CTRL, button0.__button);
             }
 
             /* refresh button settings; TODO handle freeze */
@@ -208,52 +208,59 @@ bool Gpio::getLevel()
     }
 }
 
-void send_message(uint32_t opcode, uint32_t data)
+void send_message(uint32_t opcode, uint32_t d)
 {
-    mesh_packet_t pkt;
+    uint32_t data;
 
 #if 0
+    mesh_packet_t pkt;
     wireless_form_pkt(&pkt, CONSOLE_NODE_ADDR, mesh_pkt_nack, 0, 2,
             &opcode, sizeof(opcode),
             &data, sizeof(data));
-    //wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &accel_orientation, sizeof(accel_orientation), 0);
-#else
-    uint32_t orientation;
-
-    //wireless_form_pkt(&pkt, CONSOLE_NODE_ADDR, mesh_pkt_nack, 0, 2,
-            //&opcode, sizeof(opcode),
-            //&data, sizeof(data));
-    if (opcode == ZZU_CTRL) {
-        orientation = 100;
-    } else {
-        orientation = data;
-    }
-    wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &orientation, sizeof(orientation), 0);
+    wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &accel_orientation, sizeof(accel_orientation), 0);
 #endif
+
+    if (opcode == ZZUM_CTRL) {
+        data = ZZUM_CTRL;
+    } else {
+        data = d;
+    }
+    wireless_send(CONSOLE_NODE_ADDR, mesh_pkt_nack, &data, sizeof(data), 0);
 }
 
 void send_orientation(uint32_t orientation)
 {
-    send_message(ZZU_DATA, orientation);
+    send_message(ZZUM_MOVE, orientation);
 }
 
 void orient(void *p)
 {
-    //uint16_t x = 0;
     int x = 0;
     uint32_t orientation;
+    zzu_velocity velocity = no;
 
     while (1) {
         x = AS.getX();
-        if (x > 300) {
-            orientation = 2;
-        } else if(x < -300) {
-            orientation = 0;
+        velocity = no;
+        if (x >= 0) {
+            if (x > 600) {
+                velocity = uf;
+            } else if (x > 400) {
+                velocity = um;
+            } else if (x > 200) {
+                velocity = us;
+            }
         } else {
-            orientation = 1;
+            if (x < -600) {
+                velocity = df;
+            } else if (x < -400) {
+                velocity = dm;
+            } else if (x < -200) {
+                velocity = ds;
+            }
         }
-        send_orientation(orientation);
-        vTaskDelay(80);
+        send_orientation(velocity);
+        vTaskDelay(40);
     }
 }
 

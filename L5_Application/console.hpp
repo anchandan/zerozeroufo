@@ -33,6 +33,11 @@
 #define BLACK   0x0000
 #define GOLD    0xF81F
 
+/* Game states */
+const uint32_t ZZUS_INIT = 0;
+const uint32_t ZZUS_RESET = 1;
+const uint32_t ZZUS_PLAY = 2;
+
 extern RGB rgb;
 extern SemaphoreHandle_t update_display_semphr;
 extern QueueHandle_t orientation_q;

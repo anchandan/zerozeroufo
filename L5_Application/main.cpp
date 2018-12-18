@@ -92,7 +92,6 @@ int main(void)
     //xTaskCreate(RGB_UFO, "UFO", 256, NULL, 1, NULL);
     //xTaskCreate(gameplay, "Game_Screen", 256, NULL, PRIORITY_LOW, NULL);
     xTaskCreate(receive_message, "recv", 256, NULL, PRIORITY_HIGH, NULL);
-    //xTaskCreate(Pixel_Test,"Pixel_Test",256, NULL, PRIORITY_HIGH, NULL);
 #endif /* ZZU_CONSOLE */
 
     scheduler_start(); ///< This shouldn't return
