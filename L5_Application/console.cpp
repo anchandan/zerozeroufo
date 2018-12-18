@@ -63,6 +63,7 @@ void receive_message(void *p)
                     xQueueSend(orientation_q, &data, 0);
                 }
             } else {
+                /* manage the game's state machine */
                 switch (game_state) {
                 case ZZUS_RESET:
                     game_state = ZZUS_PLAY;
@@ -117,7 +118,6 @@ void Draw_UFO(uint8_t x, uint8_t y)
 bool ufo_draw_collision(uint8_t x, uint8_t y)
 {
     bool collision = false;
-    //uint16_t x_c, y_c;
 
     //collision = rgb.drawPixel(x, y, VIOLET) || collision;
     if (rgb.drawPixel(x, y, VIOLET)) {
@@ -129,6 +129,13 @@ bool ufo_draw_collision(uint8_t x, uint8_t y)
     collision = rgb.drawLineCollision(x-3, y+2, x+3, y+2, VIOLET, &x_c, &y_c) || collision;
 
     return collision;
+}
+
+void ufo_evil_draw(uint8_t x, uint8_t y)
+{
+    rgb.drawPixel(x, y, RED);
+    rgb.drawLine(x-1, y+1, x+1, y+1, RED);
+    rgb.drawLine(x-3, y+2, x+3, y+2, RED);
 }
 
 void Clear_UFO(uint8_t x, uint8_t y)
@@ -253,20 +260,24 @@ void game_tick()
 
 void gameplay(void *p)
 {
-    uint32_t accel_value;
     uint32_t score = 0;
-    bool collision_flag = false, token_flag = false;
+    bool collision_flag = false, token_flag = false, summoned = false;
 
     /* initialize map objects */
     /* TODO handle logic more regularly */
     uint32_t x = 5, y = 30;
+    uint32_t x_evil = 58, y_evil;
     zzu_velocity velocity;
     uint32_t orientationQ_Buffer=0;
+
+    ufo_evil_reset(&y_evil, &summoned);
     int x3 = 104, y3 = get_rand(5, 5), height3 = 3;
     Obstacle ob1 = Obstacle();
     Obstacle ob2 = Obstacle();
     Obstacle ob3 = Obstacle();
     Obstacle ob4 = Obstacle();
+    Obstacle laser = Obstacle();
+    laser.initLaser();
     Coin coin1 = Coin();
     Coin coin2 = Coin();
     Coin coin3 = Coin();
@@ -290,6 +301,10 @@ void gameplay(void *p)
         coin1.draw();
         coin2.draw();
         coin3.draw();
+        ufo_evil_draw(x_evil, y_evil);
+        if (laser.fired) {
+            laser.draw();
+        }
 
         collision_flag = ufo_draw_collision(x, y);
 
@@ -298,6 +313,10 @@ void gameplay(void *p)
         game_tick();
 
         /* clear objects for next tick */
+        Clear_UFO(x_evil, y_evil);
+        if (laser.fired) {
+            laser.erase();
+        }
         rgb.drawObstacle(x3,y3,2,height3,BLACK, true);
         rgb.drawObstacle(x3,y3+35,2,height3,BLACK, true);
         ob1.erase();
@@ -333,6 +352,8 @@ void gameplay(void *p)
                 vTaskDelay(10);
                 vTaskSuspend(gameplay_h);
                 boom_flag = true;
+            } else if (score > 0 && score % 4 == 0) {
+                summon_evil(&y_evil, &summoned);
             }
         }
         boom_flag = false;
@@ -358,6 +379,14 @@ void gameplay(void *p)
             coin1.shift();
             coin2.shift();
             coin3.shift();
+            if (summoned) {
+                y_evil--;
+                if (y_evil <= 0) {
+                    ufo_evil_reset(&y_evil, &summoned);
+                } else if (y_evil == 31) {
+                    laser.fireLaser(y);
+                }
+            }
         }
         if (gameplay_timers[1] == 0) {
             if (velocity == um) {
@@ -382,6 +411,10 @@ void gameplay(void *p)
             if (ob2.isFast()) ob2.shift();
             if (ob3.isFast()) ob3.shift();
             if (ob4.isFast()) ob4.shift();
+
+            if (laser.fired) {
+                laser.shoot();
+            }
         }
 
         /* recover obstacles */
@@ -398,8 +431,23 @@ void gameplay(void *p)
         if (coin1.done()) coin1.init();
         if (coin2.done()) coin2.init();
         if (coin3.done()) coin3.init();
+        if (laser.done()) laser.initLaser();
 
     }
+}
+
+void summon_evil(uint32_t *y_evil, bool *summoned)
+{
+    *y_evil = get_rand(8, 64);
+    *summoned = true;
+}
+
+void ufo_evil_reset(uint32_t *y_evil, bool *summoned)
+{
+    const uint32_t y_evil_reset = 255;
+
+    *y_evil = y_evil_reset;
+    *summoned = false;
 }
 
 Obstacle::Obstacle()
@@ -454,6 +502,7 @@ void Obstacle::init()
     setShape();
     setColour();
     setSpeed(0);
+    fired = false;
 }
 
 void Obstacle::init(uint32_t score)
@@ -465,6 +514,48 @@ void Obstacle::init(uint32_t score)
     setShape();
     setColour();
     setSpeed(score);
+    fired = false;
+    fire_count = 0;
+    fire_angle = 0;
+}
+
+void Obstacle::initLaser()
+{
+    x = 54;
+    y = 31;
+    w = 4;
+    h = 1;
+    c = RED;
+    shape = rectangle;
+    fired = false;
+    fire_count = 0;
+    fire_angle = 0;
+}
+
+void Obstacle::fireLaser(uint32_t y_u)
+{
+    const int x_d = 49;
+    int y_d = 31 - (int)y_u;
+
+    fired = true;
+    fire_count = 0;
+    fire_angle = x_d / y_d;
+}
+
+void Obstacle::shoot()
+{
+    x--;
+    if (fire_angle > 0) {
+        if ((++fire_count >= fire_angle)) {
+            fire_count = 0;
+            y--;
+        }
+    } else if (fire_angle < 0) {
+        if ((--fire_count <= fire_angle)) {
+            fire_count = 0;
+            y++;
+        }
+    }
 }
 
 void Obstacle::draw()

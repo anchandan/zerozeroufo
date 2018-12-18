@@ -57,6 +57,9 @@ extern TaskHandle_t start_h;
 const uint32_t MAX_OBSTACLES = 5;
 const uint32_t MAX_SPEED = 3;
 
+void summon_evil(uint32_t *y_evil, bool *summoned);
+void ufo_evil_reset(uint32_t *y_evil, bool *summoned);
+
 /* TODO better class hierarchy between different types of obstacles, coins, lifes */
 class Obstacle
 {
@@ -75,6 +78,8 @@ private:
     uint16_t x, y, w, h, c;
     uint32_t speed;
     Shape shape;
+    int fire_angle;
+    int fire_count;
 
     void setShape();
     void setColour();
@@ -84,8 +89,12 @@ public:
     Obstacle();
     ~Obstacle() { ; };
 
+    bool fired;
     void init();
     void init(uint32_t score);
+    void initLaser();
+    void fireLaser(uint32_t y_u);
+    void shoot();
     void draw();
     void erase();
     void shift();
